@@ -48,23 +48,11 @@ firebase apphosting:backends:create --project wodsi-47ffb
 
 Seguí los prompts (región, repo, rama, nombre del backend).
 
-## 5. Variables de entorno (importante)
+## 5. Variables de entorno
 
-Vite embebe las variables en el **build**. En el backend → **Settings → Environment**, pegá el contenido de tu `.env.local`:
+Ya están en `apphosting.yaml` (BUILD + RUNTIME). Si cambiás `.env.local`, actualizá ese archivo y hacé un nuevo rollout.
 
-```
-EXPO_PUBLIC_FIREBASE_API_KEY=...
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=wodsi-47ffb.firebaseapp.com
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=wodsi-47ffb
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=wodsi-47ffb.firebasestorage.app
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=293842210700
-EXPO_PUBLIC_FIREBASE_APP_ID=...
-EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=...
-```
-
-Marcá disponibilidad **BUILD** y **RUNTIME** (por defecto en consola suele estar bien).
-
-Creá un **nuevo rollout** después de guardar variables.
+Opcional: podés sobrescribirlas en consola (Settings → Environment); la consola tiene prioridad sobre el YAML.
 
 ## 6. Autenticación (Google / email)
 
