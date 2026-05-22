@@ -15,26 +15,26 @@ scripts:
   buildCommand: npm ci && npm run build
   runCommand: npm start
 
-# Descomentá y completá si preferís el archivo en vez de la consola:
-# env:
-#   - variable: EXPO_PUBLIC_FIREBASE_API_KEY
-#     value: TU_API_KEY
-#     availability: [BUILD, RUNTIME]
-#   - variable: EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
-#     value: wodsi-47ffb.firebaseapp.com
-#     availability: [BUILD, RUNTIME]
-#   - variable: EXPO_PUBLIC_FIREBASE_PROJECT_ID
-#     value: wodsi-47ffb
-#     availability: [BUILD, RUNTIME]
-#   - variable: EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET
-#     value: wodsi-47ffb.firebasestorage.app
-#     availability: [BUILD, RUNTIME]
-#   - variable: EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-#     value: "293842210700"
-#     availability: [BUILD, RUNTIME]
-#   - variable: EXPO_PUBLIC_FIREBASE_APP_ID
-#     value: TU_APP_ID
-#     availability: [BUILD, RUNTIME]
-#   - variable: EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
-#     value: TU_MEASUREMENT_ID
-#     availability: [BUILD, RUNTIME]
+# Config web de Firebase (pública; Vite la embebe en el build)
+env:
+  - variable: EXPO_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyBgFsbbFk8OeojswB7sv7mrDYGMHxfho8U
+    availability: [BUILD, RUNTIME]
+  - variable: EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: wodsi-47ffb.firebaseapp.com
+    availability: [BUILD, RUNTIME]
+  - variable: EXPO_PUBLIC_FIREBASE_PROJECT_ID
+    value: wodsi-47ffb
+    availability: [BUILD, RUNTIME]
+  - variable: EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: wodsi-47ffb.firebasestorage.app
+    availability: [BUILD, RUNTIME]
+  - variable: EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "293842210700"
+    availability: [BUILD, RUNTIME]
+  - variable: EXPO_PUBLIC_FIREBASE_APP_ID
+    value: 1:293842210700:web:43a99b4533d3fbba9410a9
+    availability: [BUILD, RUNTIME]
+  - variable: EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: G-Q5W423KQNM
+    availability: [BUILD, RUNTIME]

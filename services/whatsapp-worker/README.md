@@ -52,6 +52,10 @@ PUPPETEER_EXECUTABLE_PATH=/Applications/Google Chrome.app/Contents/MacOS/Google 
 
 Reiniciá `npm run whatsapp:dev` y volvé a **Conectar WhatsApp** en la app.
 
+## Windows 24/7 (tu PC como servidor)
+
+Guía completa: [`docs/DEPLOY_WINDOWS.md`](../../docs/DEPLOY_WINDOWS.md) — energía sin suspender, `pm2`, arranque al boot.
+
 ## Alias y precios
 
 El coach los configura en **Configuración** (`coaches_public`). Las plantillas usan `{{alias}}` y `{{monto}}`.

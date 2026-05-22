@@ -14,6 +14,11 @@ const LINUX_CHROME_PATHS = [
   '/usr/bin/chromium',
 ]
 
+const WIN_CHROME_PATHS = [
+  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+]
+
 function firstExisting(paths) {
   return paths.find(p => existsSync(p)) || null
 }
@@ -30,6 +35,11 @@ export function resolveChromeExecutable() {
   if (platform() === 'linux') {
     const linux = firstExisting(LINUX_CHROME_PATHS)
     if (linux) return linux
+  }
+
+  if (platform() === 'win32') {
+    const win = firstExisting(WIN_CHROME_PATHS)
+    if (win) return win
   }
 
   return null
