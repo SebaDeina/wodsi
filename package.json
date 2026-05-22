@@ -1,0 +1,27 @@
+{
+  "name": "wodsi",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "superstatic dist --config superstatic.json --port ${PORT:-8080} --host 0.0.0.0",
+    "preview": "vite preview",
+    "deploy:rules": "firebase deploy --only firestore:rules",
+    "whatsapp:install": "npm install --prefix services/whatsapp-worker",
+    "whatsapp:dev": "npm run dev --prefix services/whatsapp-worker",
+    "whatsapp:start": "npm run start --prefix services/whatsapp-worker"
+  },
+  "dependencies": {
+    "firebase": "^12.13.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "superstatic": "^9.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
+  }
+}

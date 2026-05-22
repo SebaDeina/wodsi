@@ -1,0 +1,17 @@
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+.DS_Store
+*.log
+
+services/whatsapp-worker/node_modules
+services/whatsapp-worker/.wwebjs_auth
+services/whatsapp-worker/*-firebase-adminsdk-*.json
+services/whatsapp-worker/serviceAccount.json
+services/whatsapp-worker/.env
+
+.firebase
+firebase-debug.log
+firebase-debug.*.log

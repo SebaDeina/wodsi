@@ -1,0 +1,17 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: oklch(0.135 0.012 250);
+  font-family: 'Space Grotesk', 'Helvetica Neue', Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root { min-height: 100vh; min-height: 100dvh; }
+
+* { scrollbar-width: thin; scrollbar-color: oklch(0.32 0.012 250) transparent; }
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: oklch(0.32 0.012 250); border-radius: 3px; }

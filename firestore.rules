@@ -1,0 +1,230 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helpers ───────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function myProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function myProfileExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isCoach() {
+      return isSignedIn() && myProfileExists() && myProfile().role == 'coach';
+    }
+
+    function isAthlete() {
+      return isSignedIn() && myProfileExists() && myProfile().role == 'athlete';
+    }
+
+    function isLinkedCoach(coachId) {
+      return coachId != null
+        && (
+          (exists(/databases/$(database)/documents/coaches_public/$(coachId))
+            && get(/databases/$(database)/documents/coaches_public/$(coachId)).data.name is string)
+          || (exists(/databases/$(database)/documents/users/$(coachId))
+            && get(/databases/$(database)/documents/users/$(coachId)).data.role == 'coach')
+        );
+    }
+
+    // ─── coaches_public/{coachId} ──────────────────────────────
+
+    match /coaches_public/{coachId} {
+      allow read: if true;
+      allow write: if isCoach() && request.auth.uid == coachId;
+    }
+
+    // ─── users/{userId} ────────────────────────────────────────
+
+    match /users/{userId} {
+
+      // Propio perfil
+      allow read: if isSelf(userId);
+
+      // Coach lee atletas vinculados (query: coachId == auth.uid, role == athlete)
+      allow read: if isCoach()
+        && resource.data.role == 'athlete'
+        && resource.data.coachId == request.auth.uid;
+
+      // Atleta lee el perfil de su coach (para nombre, etc.)
+      allow read: if isAthlete()
+        && userId == myProfile().coachId;
+
+      // Registro: solo puede crear su propio documento
+      allow create: if isSelf(userId)
+        && request.resource.data.role in ['coach', 'athlete']
+        && request.resource.data.email is string
+        && request.resource.data.name is string
+        && (
+          (request.resource.data.role == 'coach'
+            && (!('coachId' in request.resource.data) || request.resource.data.coachId == null))
+          || (request.resource.data.role == 'athlete'
+            && ('coachId' in request.resource.data)
+            && isLinkedCoach(request.resource.data.coachId))
+        );
+
+      // Actualizar propio perfil sin cambiar rol ni vínculo de coach
+      allow update: if isSelf(userId)
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.coachId == resource.data.coachId
+        && request.resource.data.email == resource.data.email
+        && (
+          !('whatsappPhone' in request.resource.data)
+          || (request.resource.data.whatsappPhone is string
+            && request.resource.data.whatsappPhone.size() >= 12
+            && request.resource.data.whatsappPhone.size() <= 15)
+        );
+
+      // Coach desvincula atleta (solo coachId → null)
+      allow update: if isCoach()
+        && resource.data.role == 'athlete'
+        && resource.data.coachId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coachId'])
+        && request.resource.data.coachId == null;
+
+      // Coach asigna grupo de planificación principal
+      allow update: if isCoach()
+        && resource.data.role == 'athlete'
+        && resource.data.coachId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['programGroupId']);
+
+      // Coach marca estado de membresía (cobro manual)
+      allow update: if isCoach()
+        && resource.data.role == 'athlete'
+        && resource.data.coachId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'statusNote', 'paidUntil']);
+
+      allow delete: if false;
+    }
+
+    // ─── program_groups/{groupId} ──────────────────────────────
+
+    match /program_groups/{groupId} {
+      allow read: if isCoach() && resource.data.coachId == request.auth.uid;
+      allow read: if isAthlete()
+        && request.auth.uid in resource.data.memberIds;
+      allow create: if isCoach()
+        && request.resource.data.coachId == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.memberIds is list;
+      allow update, delete: if isCoach()
+        && resource.data.coachId == request.auth.uid
+        && request.resource.data.coachId == request.auth.uid;
+    }
+
+    // ─── wods/{wodId} ──────────────────────────────────────────
+
+    match /wods/{wodId} {
+
+      // Coach: sus WODs
+      allow read: if isSignedIn() && resource.data.coachId == request.auth.uid;
+
+      // Atleta: WODs asignados a él (box, grupo o individual)
+      allow read: if isAthlete()
+        && myProfile().coachId != null
+        && resource.data.coachId == myProfile().coachId
+        && (
+          !('assigneeType' in resource.data)
+          || resource.data.assigneeType == 'box'
+          || request.auth.uid in resource.data.audienceAthleteIds
+        );
+
+      allow create: if isCoach()
+        && request.resource.data.coachId == request.auth.uid
+        && request.resource.data.date is string
+        && request.resource.data.type is string
+        && request.resource.data.assigneeType in ['box', 'group', 'athlete']
+        && request.resource.data.audienceAthleteIds is list
+        && (
+          (request.resource.data.description is string
+            && request.resource.data.description.size() > 0)
+          || (request.resource.data.sections is list
+            && request.resource.data.sections.size() > 0)
+        );
+
+      allow update: if isCoach()
+        && resource.data.coachId == request.auth.uid
+        && request.resource.data.coachId == request.auth.uid
+        && request.resource.data.assigneeType in ['box', 'group', 'athlete']
+        && request.resource.data.audienceAthleteIds is list;
+
+      allow delete: if isCoach()
+        && resource.data.coachId == request.auth.uid;
+    }
+
+    // ─── whatsapp_settings/{coachId} ───────────────────────────
+
+    match /whatsapp_settings/{coachId} {
+      allow read: if isCoach() && request.auth.uid == coachId;
+      allow create: if isCoach() && request.auth.uid == coachId;
+      allow update: if isCoach() && request.auth.uid == coachId
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['businessName', 'planLabel', 'sessionCommand', 'automationEnabled', 'updatedAt']);
+    }
+
+    match /whatsapp_send_log/{logId} {
+      allow read, write: if false;
+    }
+
+    // ─── whatsapp_rules/{ruleId} ───────────────────────────────
+
+    match /whatsapp_rules/{ruleId} {
+      allow read: if isCoach() && resource.data.coachId == request.auth.uid;
+      allow create: if isCoach() && request.resource.data.coachId == request.auth.uid;
+      allow update, delete: if isCoach()
+        && resource.data.coachId == request.auth.uid
+        && request.resource.data.coachId == request.auth.uid;
+    }
+
+    // ─── whatsapp_outbox/{id} — cola de envío (solo atletas del roster) ─
+
+    match /whatsapp_outbox/{outboxId} {
+      allow read: if isCoach() && resource.data.coachId == request.auth.uid;
+      allow create: if isCoach()
+        && request.resource.data.coachId == request.auth.uid
+        && request.resource.data.athleteId is string
+        && request.resource.data.whatsappPhone is string
+        && request.resource.data.body is string
+        && request.resource.data.status == 'pending';
+      allow update, delete: if false;
+    }
+
+    // ─── habit_daily/{docId} — hábitos del atleta por día ─────
+
+    match /habit_daily/{docId} {
+      allow read: if isAthlete()
+        && resource.data.athleteId == request.auth.uid;
+      allow create: if isAthlete()
+        && request.resource.data.athleteId == request.auth.uid
+        && request.resource.data.date is string
+        && request.resource.data.items is list;
+      allow update: if isAthlete()
+        && resource.data.athleteId == request.auth.uid
+        && request.resource.data.athleteId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ─── library_blocks/{blockId} ──────────────────────────────
+
+    match /library_blocks/{blockId} {
+      allow read: if isCoach() && resource.data.coachId == request.auth.uid;
+      allow create: if isCoach() && request.resource.data.coachId == request.auth.uid;
+      allow update, delete: if isCoach()
+        && resource.data.coachId == request.auth.uid
+        && request.resource.data.coachId == request.auth.uid;
+    }
+  }
+}

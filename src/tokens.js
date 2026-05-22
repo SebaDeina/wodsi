@@ -1,0 +1,27 @@
+export const W = {
+  c: {
+    bg:      'oklch(0.135 0.012 250)',
+    bg2:     'oklch(0.18 0.012 250)',
+    card:    'oklch(0.22 0.012 250)',
+    cardHi:  'oklch(0.27 0.012 250)',
+    line:    'oklch(0.32 0.012 250)',
+    lineDim: 'oklch(0.26 0.012 250)',
+    text:    'oklch(0.98 0.005 100)',
+    dim:     'oklch(0.72 0.005 100)',
+    mute:    'oklch(0.52 0.005 100)',
+    lime:    'oklch(0.89 0.22 130)',
+    limeSoft:'oklch(0.89 0.22 130 / 0.1)',
+    limeDk:  'oklch(0.62 0.18 130)',
+    orange:  'oklch(0.74 0.21 38)',
+    orangeDk:'oklch(0.55 0.18 38)',
+    red:     'oklch(0.68 0.25 22)',
+    blue:    'oklch(0.78 0.16 230)',
+    violet:  'oklch(0.7 0.2 305)',
+    yellow:  'oklch(0.92 0.2 95)',
+  },
+  font: {
+    sans:    '"Space Grotesk", "Helvetica Neue", Helvetica, sans-serif',
+    mono:    '"JetBrains Mono", ui-monospace, monospace',
+    display: '"Space Grotesk", "Helvetica Neue", Helvetica, sans-serif',
+  },
+}

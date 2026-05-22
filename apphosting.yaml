@@ -1,0 +1,40 @@
+# Firebase App Hosting — Wodsi (Vite SPA)
+# Docs: https://firebase.google.com/docs/app-hosting
+#
+# Variables: copiá las de .env.local en Firebase Console → App Hosting → tu backend
+# → Settings → Environment (BUILD + RUNTIME), o completá la sección env: abajo.
+
+runConfig:
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+scripts:
+  buildCommand: npm ci && npm run build
+  runCommand: npm start
+
+# Descomentá y completá si preferís el archivo en vez de la consola:
+# env:
+#   - variable: EXPO_PUBLIC_FIREBASE_API_KEY
+#     value: TU_API_KEY
+#     availability: [BUILD, RUNTIME]
+#   - variable: EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
+#     value: wodsi-47ffb.firebaseapp.com
+#     availability: [BUILD, RUNTIME]
+#   - variable: EXPO_PUBLIC_FIREBASE_PROJECT_ID
+#     value: wodsi-47ffb
+#     availability: [BUILD, RUNTIME]
+#   - variable: EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET
+#     value: wodsi-47ffb.firebasestorage.app
+#     availability: [BUILD, RUNTIME]
+#   - variable: EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+#     value: "293842210700"
+#     availability: [BUILD, RUNTIME]
+#   - variable: EXPO_PUBLIC_FIREBASE_APP_ID
+#     value: TU_APP_ID
+#     availability: [BUILD, RUNTIME]
+#   - variable: EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
+#     value: TU_MEASUREMENT_ID
+#     availability: [BUILD, RUNTIME]

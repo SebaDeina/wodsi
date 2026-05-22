@@ -1,0 +1,15 @@
+{
+  "name": "wodsi-whatsapp-worker",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch --watch-kill-signal=SIGTERM src/index.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.2",
+    "qrcode": "^1.5.4",
+    "whatsapp-web.js": "^1.26.0"
+  }
+}
