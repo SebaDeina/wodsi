@@ -19,9 +19,12 @@ npm install
 
 ```bash
 npm run build
-PORT=8080 npm start
+npm start
 # Abrí http://localhost:8080
 ```
+
+Si el build en App Hosting falla con `vite: command not found`, el `apphosting.yaml` debe usar
+`npm ci --include=dev` (en CI, `npm ci` solo instala dependencias de producción).
 
 ## 3. Publicar reglas de Firestore
 

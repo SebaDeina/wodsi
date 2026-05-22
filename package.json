@@ -3,10 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": "20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "superstatic dist --config superstatic.json --port ${PORT:-8080} --host 0.0.0.0",
+    "start": "superstatic dist --config superstatic.json --port 8080 --host 0.0.0.0",
     "preview": "vite preview",
     "deploy:rules": "firebase deploy --only firestore:rules",
     "deploy:hosting": "npm run build && firebase deploy --only hosting,firestore:rules",

@@ -12,7 +12,8 @@ runConfig:
   memoryMiB: 512
 
 scripts:
-  buildCommand: npm ci && npm run build
+  # npm ci en CI suele omitir devDependencies → vite no existe
+  buildCommand: npm ci --include=dev && npm run build
   runCommand: npm start
 
 # Config web de Firebase (pública; Vite la embebe en el build)
