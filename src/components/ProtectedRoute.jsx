@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { auth } from '../firebase'
 import { athleteAppPath, athleteNeedsOnboarding } from '../lib/athleteRoutes'
+import { coachAppPath } from '../lib/googleAuthFlow'
 import { W } from '../tokens'
 
 function AuthSpinner() {
@@ -30,7 +31,7 @@ export function ProtectedRoute({ children, role }) {
   }
 
   if (role && profile.role !== role) {
-    return <Navigate to={profile.role === 'athlete' ? athleteAppPath(profile) : '/coach'} replace />
+    return <Navigate to={profile.role === 'athlete' ? athleteAppPath(profile) : coachAppPath(profile)} replace />
   }
 
   if (role === 'athlete' && athleteNeedsOnboarding(profile) && location.pathname !== '/athlete/onboarding') {
@@ -39,6 +40,14 @@ export function ProtectedRoute({ children, role }) {
 
   if (location.pathname === '/athlete/onboarding' && profile.whatsappPhone) {
     return <Navigate to="/athlete" replace />
+  }
+
+  if (
+    role === 'coach'
+    && profile.coachOnboardingCompleted === false
+    && location.pathname !== '/coach/onboarding'
+  ) {
+    return <Navigate to="/coach/onboarding" replace />
   }
 
   return children

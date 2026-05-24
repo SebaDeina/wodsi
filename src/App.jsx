@@ -10,6 +10,7 @@ import Login             from './pages/Login'
 import Register          from './pages/Register'
 import Settings          from './pages/Settings'
 import CoachDashboard    from './pages/coach/CoachDashboard'
+import CoachOnboarding   from './pages/coach/CoachOnboarding'
 import CoachAtletas      from './pages/coach/CoachAtletas'
 import CoachAthleteDetail from './pages/coach/CoachAthleteDetail'
 import CoachNuevoAtleta  from './pages/coach/CoachNuevoAtleta'
@@ -55,6 +56,9 @@ export default function App() {
             } />
 
             {/* Coach routes */}
+            <Route path="/coach/onboarding" element={
+              <ProtectedRoute role="coach"><CoachOnboarding /></ProtectedRoute>
+            } />
             <Route path="/coach" element={
               <ProtectedRoute role="coach"><CoachDashboard /></ProtectedRoute>
             } />

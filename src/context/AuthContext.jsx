@@ -86,6 +86,7 @@ export function AuthProvider({ children }) {
       authProvider: 'email',
       status: 'active',
       coachId: role === 'athlete' ? linkedCoachId : null,
+      coachOnboardingCompleted: role === 'coach' ? false : null,
       createdAt: serverTimestamp(),
     }
     await setDoc(doc(db, 'users', cred.user.uid), profileData)
@@ -143,6 +144,7 @@ export function AuthProvider({ children }) {
       authProvider: 'google',
       status: 'active',
       coachId: role === 'athlete' ? linkedCoachId : null,
+      coachOnboardingCompleted: role === 'coach' ? false : null,
       createdAt: serverTimestamp(),
     }
     await setDoc(doc(db, 'users', fireUser.uid), profileData)
@@ -166,6 +168,15 @@ export function AuthProvider({ children }) {
       whatsappUpdatedAt: serverTimestamp(),
     }, { merge: true })
     setProfile(p => ({ ...p, whatsappDisplay: whatsappDisplay || null, whatsappPhone }))
+  }
+
+  async function updateProfileFields(patch) {
+    if (!user) return
+    await setDoc(doc(db, 'users', user.uid), {
+      ...patch,
+      updatedAt: serverTimestamp(),
+    }, { merge: true })
+    setProfile(p => ({ ...p, ...patch }))
   }
 
   async function logout() {
@@ -225,6 +236,7 @@ export function AuthProvider({ children }) {
       loginEmail, registerEmail, loginGoogle, finishGoogleRegistration,
       validateCoachId, fetchCoachPublic, syncCoachPublic,
       updateLang, updateWhatsAppPhone, logout,
+      updateProfileFields,
       googleRedirectOutcome, googleRedirectError, googleRedirectReady,
       clearGoogleRedirectState,
     }}>
