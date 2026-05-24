@@ -3,6 +3,8 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useLang } from '../context/LangContext'
 import { parseInviteSearchParams, saveInviteToSession } from '../lib/invite'
+import { prefersGoogleRedirect } from '../lib/googleAuth'
+import { buildGoogleAuthIntent, routeAfterGoogleAuth } from '../lib/googleAuthFlow'
 import { W } from '../tokens'
 import { WodsiLogo } from '../components/WodsiLogo'
 import { Btn } from '../components/Btn'
@@ -10,7 +12,11 @@ import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { AuthDivider } from '../components/AuthDivider'
 
 export default function Login() {
-  const { loginEmail, loginGoogle } = useAuth()
+  const {
+    loginEmail, loginGoogle,
+    googleRedirectOutcome, googleRedirectError, googleRedirectReady,
+    clearGoogleRedirectState,
+  } = useAuth()
   const { lang, setLang } = useLang()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -27,6 +33,24 @@ export default function Login() {
     }
   }, [invite.coachId, invite.coachName, invite.isAthleteInvite])
 
+  useEffect(() => {
+    if (!googleRedirectReady) return
+    if (googleRedirectError) {
+      setError(formatError(googleRedirectError))
+      clearGoogleRedirectState()
+      setBusy(false)
+      return
+    }
+    if (!googleRedirectOutcome) return
+    setBusy(true)
+    routeAfterGoogleAuth(googleRedirectOutcome, { navigate, params, invite })
+    clearGoogleRedirectState()
+    setBusy(false)
+  }, [
+    googleRedirectReady, googleRedirectOutcome, googleRedirectError,
+    navigate, params, invite, clearGoogleRedirectState,
+  ])
+
   function registerLink() {
     if (invite.isAthleteInvite) {
       const q = new URLSearchParams({ role: 'athlete', coach: invite.coachId })
@@ -37,8 +61,11 @@ export default function Login() {
   }
 
   function formatError(err) {
-    if (err.code === 'auth/popup-closed-by-user') {
-      return lang === 'es' ? 'Cerraste la ventana de Google. Intentá de nuevo.' : 'You closed the Google window. Try again.'
+    if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+      return lang === 'es' ? 'Inicio con Google cancelado. Intentá de nuevo.' : 'Google sign-in was cancelled. Try again.'
+    }
+    if (err.code === 'auth/account-exists-with-different-credential') {
+      return lang === 'es' ? 'Ese correo ya está registrado con otro método.' : 'That email is already registered with another method.'
     }
     if (err.code === 'auth/invalid-credential') {
       return lang === 'es' ? 'Email o contraseña incorrectos.' : 'Invalid email or password.'
@@ -73,22 +100,20 @@ export default function Login() {
     setError('')
     setBusy(true)
     try {
-      const { profile, needsRegistration } = await loginGoogle()
-      if (needsRegistration) {
-        const q = new URLSearchParams({ google: '1' })
-        if (invite.isAthleteInvite) {
-          q.set('role', 'athlete')
-          q.set('coach', invite.coachId)
-          if (invite.coachName) q.set('from', invite.coachName)
-        }
-        navigate(`/register?${q.toString()}`)
-        return
-      }
-      afterAuthRedirect(profile)
+      const intent = buildGoogleAuthIntent({
+        mode: 'login',
+        next: params.get('next'),
+        invite: invite.isAthleteInvite
+          ? { coachId: invite.coachId, coachName: invite.coachName }
+          : null,
+      })
+      const result = await loginGoogle(intent)
+      if (result?.redirecting) return
+      routeAfterGoogleAuth(result, { navigate, params, invite })
     } catch (err) {
       setError(formatError(err))
     } finally {
-      setBusy(false)
+      if (!prefersGoogleRedirect()) setBusy(false)
     }
   }
 

@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import { membershipStatusFromDates } from '../lib/membership'
 
 export function useCoachAthletes() {
   const { user } = useAuth()
@@ -9,42 +10,43 @@ export function useCoachAthletes() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!user?.uid) {
       setAthletes([])
       setLoading(false)
       return
     }
-
-    let cancelled = false
     setLoading(true)
     setError(null)
+    try {
+      const q = query(
+        collection(db, 'users'),
+        where('coachId', '==', user.uid),
+        where('role', '==', 'athlete'),
+      )
+      const snap = await getDocs(q)
+      setAthletes(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [user?.uid])
 
-    async function load() {
-      try {
-        const q = query(
-          collection(db, 'users'),
-          where('coachId', '==', user.uid),
-          where('role', '==', 'athlete'),
-        )
-        const snap = await getDocs(q)
-        if (!cancelled) {
-          setAthletes(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-        }
-      } catch (err) {
-        if (!cancelled) setError(err.message)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+  useEffect(() => {
+    let cancelled = false
+
+    async function run() {
+      if (!cancelled) await load()
     }
 
-    load()
+    run()
     return () => { cancelled = true }
-  }, [user?.uid])
+  }, [load])
 
   const counts = useMemo(() => {
     return athletes.reduce((acc, a) => {
-      const s = a.status || 'active'
+      const s = membershipStatusFromDates(a.paidUntil, a.status)
       acc[s] = (acc[s] || 0) + 1
       acc.all = (acc.all || 0) + 1
       return acc
@@ -56,5 +58,5 @@ export function useCoachAthletes() {
     [athletes],
   )
 
-  return { athletes, loading, error, counts, activeCount }
+  return { athletes, loading, error, counts, activeCount, reload: load }
 }

@@ -1,5 +1,6 @@
 import { FieldValue } from './firebaseAdmin.js'
 import { renderTemplate, varsForAthlete } from './templates.js'
+import { daysOverdue, isDueToday } from './membership.js'
 
 function nowLocalHM() {
   const tz = process.env.TZ || 'America/Argentina/Buenos_Aires'
@@ -69,17 +70,21 @@ async function queueAutomated(db, coachId, athlete, rule, billing) {
 function matchesRule(athlete, rule) {
   const status = athlete.status || 'active'
   const key = rule.triggerKey
+  const overdue = daysOverdue(athlete.paidUntil)
 
   if (key === 'plan_due_day') {
-    return status === 'active'
+    if (status === 'paused') return false
+    return isDueToday(athlete.paidUntil) || (!athlete.paidUntil && status === 'active')
   }
   if (key === 'overdue_days') {
-    const days = rule.triggerDays ?? 3
-    return status === 'overdue' && days === 3
+    const need = rule.triggerDays ?? 3
+    if (overdue != null) return overdue >= need && overdue < need + 1
+    return status === 'overdue' && need === 3
   }
   if (key === 'overdue_pause') {
-    const days = rule.triggerDays ?? 7
-    return status === 'overdue' || (status === 'paused' && days >= 7)
+    const need = rule.triggerDays ?? 7
+    if (overdue != null) return overdue >= need
+    return status === 'overdue' || (status === 'paused' && need >= 7)
   }
   if (key === 'inactive_session') {
     return status === 'active'

@@ -10,6 +10,8 @@ import {
   clearInviteSession,
   loadInviteFromSession,
 } from '../lib/invite'
+import { prefersGoogleRedirect } from '../lib/googleAuth'
+import { buildGoogleAuthIntent, routeAfterGoogleAuth } from '../lib/googleAuthFlow'
 import { W } from '../tokens'
 import { WodsiLogo } from '../components/WodsiLogo'
 import { Btn } from '../components/Btn'
@@ -17,7 +19,11 @@ import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { AuthDivider } from '../components/AuthDivider'
 
 export default function Register() {
-  const { user, registerEmail, loginGoogle, finishGoogleRegistration } = useAuth()
+  const {
+    user, registerEmail, loginGoogle, finishGoogleRegistration,
+    googleRedirectOutcome, googleRedirectError, googleRedirectReady,
+    clearGoogleRedirectState,
+  } = useAuth()
   const { lang, setLang } = useLang()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -52,6 +58,24 @@ export default function Register() {
     const fromGoogle = user?.displayName?.trim()
     if (fromGoogle) setName(fromGoogle)
   }, [isGoogle, user?.displayName, name])
+
+  useEffect(() => {
+    if (!googleRedirectReady) return
+    if (googleRedirectError) {
+      setError(authErrorMessage(googleRedirectError))
+      clearGoogleRedirectState()
+      setBusy(false)
+      return
+    }
+    if (!googleRedirectOutcome) return
+    setBusy(true)
+    routeAfterGoogleAuth(googleRedirectOutcome, { navigate, params, invite })
+    clearGoogleRedirectState()
+    setBusy(false)
+  }, [
+    googleRedirectReady, googleRedirectOutcome, googleRedirectError,
+    navigate, params, invite, clearGoogleRedirectState,
+  ])
 
   useEffect(() => {
     if (!coachId || coachLabel) return
@@ -109,26 +133,22 @@ export default function Register() {
     setError('')
     setBusy(true)
     try {
-      const { profile, needsRegistration } = await loginGoogle()
-      if (needsRegistration) {
-        saveInviteToSession(coachId, coachLabel)
-        const q = new URLSearchParams({ google: '1' })
-        if (isAthleteFlow && coachId) {
-          q.set('role', 'athlete')
-          q.set('coach', coachId)
-          if (coachLabel) q.set('from', coachLabel)
-        } else if (role === 'coach') {
-          q.set('role', 'coach')
-        }
-        navigate(`/register?${q.toString()}`)
-        return
-      }
-      clearInviteSession()
-      navigate(profile?.role === 'athlete' ? '/athlete' : '/coach')
+      const intent = buildGoogleAuthIntent({
+        mode: 'register',
+        registerRole: role,
+        coachId: isAthleteFlow ? coachId : null,
+        coachName: coachLabel || null,
+        invite: invite.isAthleteInvite
+          ? { coachId: invite.coachId, coachName: invite.coachName }
+          : null,
+      })
+      const result = await loginGoogle(intent)
+      if (result?.redirecting) return
+      routeAfterGoogleAuth(result, { navigate, params, invite })
     } catch (err) {
       setError(authErrorMessage(err))
     } finally {
-      setBusy(false)
+      if (!prefersGoogleRedirect()) setBusy(false)
     }
   }
 

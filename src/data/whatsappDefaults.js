@@ -35,7 +35,7 @@ export const BOX_WHATSAPP_RULES = [
     triggerLabel: 'Cuota del mes',
     sendTime: '09:30',
     template:
-      'Hola {{nombre}}, hoy corresponde la cuota ({{monto}}). Podés transferir al alias {{alias}}. ¡Gracias!',
+      'Hola {{nombre}}, hoy corresponde la cuota ({{monto}}). Vence el {{vencimiento}}. Transferí al alias {{alias}}. ¡Gracias!',
     active: true,
     order: 1,
   },

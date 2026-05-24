@@ -6,6 +6,7 @@ import { AthleteShell } from '../../components/AthleteShell'
 import { Btn } from '../../components/Btn'
 import { EmptyCard } from '../../components/EmptyCard'
 import { useAthleteCoach } from '../../hooks/useAthleteCoach'
+import { formatDateKey, membershipStatusFromDates } from '../../lib/membership'
 
 export default function AthleteSubscription() {
   const { lang } = useLang()
@@ -17,6 +18,7 @@ export default function AthleteSubscription() {
   const mode = coach?.athletePaymentMode || 'both'
   const showAlias = mode === 'alias' || mode === 'both'
   const showCash = mode === 'cash' || mode === 'both'
+  const passStatus = membershipStatusFromDates(profile?.paidUntil, profile?.status)
 
   return (
     <AthleteShell lang={lang}>
@@ -52,6 +54,31 @@ export default function AthleteSubscription() {
                     ? 'Tu coach gestiona el cobro fuera de la app. Usá los datos de abajo para pagar.'
                     : 'Your coach handles payment outside the app. Use the details below.'}
                 </p>
+                {(profile?.lastPaidAt || profile?.paidUntil) && (
+                  <div style={{
+                    marginTop: 16, paddingTop: 14, borderTop: `1px solid ${W.c.lineDim}`,
+                    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 12,
+                  }}>
+                    {profile?.lastPaidAt && (
+                      <div>
+                        <div style={{ fontFamily: W.font.mono, fontSize: 9, color: W.c.mute, letterSpacing: 0.5 }}>
+                          {lang === 'es' ? 'ÚLTIMO PAGO' : 'LAST PAYMENT'}
+                        </div>
+                        <div style={{ fontWeight: 600, marginTop: 4 }}>{formatDateKey(profile.lastPaidAt, lang)}</div>
+                      </div>
+                    )}
+                    {profile?.paidUntil && (
+                      <div>
+                        <div style={{ fontFamily: W.font.mono, fontSize: 9, color: passStatus === 'overdue' ? W.c.orange : W.c.lime, letterSpacing: 0.5 }}>
+                          {lang === 'es' ? 'VENCE EL' : 'VALID UNTIL'}
+                        </div>
+                        <div style={{ fontWeight: 600, marginTop: 4, color: passStatus === 'overdue' ? W.c.orange : W.c.text }}>
+                          {formatDateKey(profile.paidUntil, lang)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {showAlias && coach?.paymentAlias && (

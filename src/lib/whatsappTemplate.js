@@ -1,9 +1,12 @@
 /** Reemplaza variables {{clave}} en plantillas de WhatsApp. */
 
+import { formatDateKey } from './membership'
+
 const FALLBACKS = {
   nombre: 'atleta',
   monto: '—',
   alias: '—',
+  vencimiento: '—',
 }
 
 export function renderWhatsAppTemplate(template, vars = {}) {
@@ -15,11 +18,12 @@ export function renderWhatsAppTemplate(template, vars = {}) {
   })
 }
 
-export function athleteTemplateVars(athlete, extra = {}, billing = {}) {
+export function athleteTemplateVars(athlete, extra = {}, billing = {}, lang = 'es') {
   const first = (athlete?.name || '').trim().split(/\s+/)[0] || 'atleta'
   return {
     nombre: first,
     monto: extra.monto ?? billing.membershipAmount ?? '',
+    vencimiento: extra.vencimiento ?? formatDateKey(athlete?.paidUntil, lang) ?? '',
     slug: extra.slug ?? '',
     dias: extra.dias != null ? String(extra.dias) : '',
     alias: extra.alias ?? billing.paymentAlias ?? '',

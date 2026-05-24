@@ -4,11 +4,18 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   updateProfile,
 } from 'firebase/auth'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase'
+import {
+  prefersGoogleRedirect,
+  saveGoogleAuthIntent,
+  readGoogleAuthIntent,
+} from '../lib/googleAuth'
 
 const AuthCtx = createContext(null)
 
@@ -26,6 +33,29 @@ export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [googleRedirectOutcome, setGoogleRedirectOutcome] = useState(null)
+  const [googleRedirectError, setGoogleRedirectError] = useState(null)
+  const [googleRedirectReady, setGoogleRedirectReady] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const cred = await getRedirectResult(auth)
+        if (cancelled || !cred) return
+        const intent = readGoogleAuthIntent()
+        const outcome = await resolveGoogleCredential(cred)
+        if (!cancelled) {
+          setGoogleRedirectOutcome({ ...outcome, intent })
+        }
+      } catch (err) {
+        if (!cancelled) setGoogleRedirectError(err)
+      } finally {
+        if (!cancelled) setGoogleRedirectReady(true)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (fireUser) => {
@@ -105,16 +135,26 @@ export function AuthProvider({ children }) {
     return { user: cred.user, profile: profileData }
   }
 
-  async function loginGoogle() {
+  async function resolveGoogleCredential(cred) {
+    const ref = doc(db, 'users', cred.user.uid)
+    const snap = await getDoc(ref)
+    if (!snap.exists()) {
+      return { user: cred.user, profile: null, needsRegistration: true }
+    }
+    const data = snap.data()
+    setProfile(data)
+    return { user: cred.user, profile: data, needsRegistration: false }
+  }
+
+  async function loginGoogle(intent = {}) {
+    if (prefersGoogleRedirect()) {
+      saveGoogleAuthIntent(intent)
+      await signInWithRedirect(auth, googleProvider)
+      return { redirecting: true }
+    }
     try {
       const cred = await signInWithPopup(auth, googleProvider)
-      const ref = doc(db, 'users', cred.user.uid)
-      const snap = await getDoc(ref)
-      if (!snap.exists()) {
-        return { user: cred.user, profile: null, needsRegistration: true }
-      }
-      setProfile(snap.data())
-      return { user: cred.user, profile: snap.data(), needsRegistration: false }
+      return resolveGoogleCredential(cred)
     } catch (err) {
       if (err.code === 'auth/popup-closed-by-user') {
         const e = new Error('POPUP_CLOSED')
@@ -123,6 +163,11 @@ export function AuthProvider({ children }) {
       }
       throw err
     }
+  }
+
+  function clearGoogleRedirectState() {
+    setGoogleRedirectOutcome(null)
+    setGoogleRedirectError(null)
   }
 
   async function finishGoogleRegistration(role, name, coachId = null) {
@@ -187,6 +232,8 @@ export function AuthProvider({ children }) {
       loginEmail, registerEmail, loginGoogle, finishGoogleRegistration,
       validateCoachId, fetchCoachPublic, syncCoachPublic,
       updateLang, updateWhatsAppPhone, logout,
+      googleRedirectOutcome, googleRedirectError, googleRedirectReady,
+      clearGoogleRedirectState,
     }}>
       {children}
     </AuthCtx.Provider>

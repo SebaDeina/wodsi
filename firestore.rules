@@ -105,7 +105,7 @@ service cloud.firestore {
         && resource.data.role == 'athlete'
         && resource.data.coachId == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['status', 'statusNote', 'paidUntil']);
+          .hasOnly(['status', 'statusNote', 'paidUntil', 'lastPaidAt']);
 
       allow delete: if false;
     }
