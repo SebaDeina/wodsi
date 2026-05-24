@@ -5,17 +5,14 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
   signOut,
   updateProfile,
 } from 'firebase/auth'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase'
-import {
-  prefersGoogleRedirect,
-  saveGoogleAuthIntent,
-  readGoogleAuthIntent,
-} from '../lib/googleAuth'
+import { prefersGoogleRedirect, saveGoogleAuthIntent, readGoogleAuthIntent } from '../lib/googleAuth'
+import { consumeGoogleRedirectResult } from '../lib/googleRedirectHandler'
+import { fetchUserProfile } from '../lib/authProfile'
 
 const AuthCtx = createContext(null)
 
@@ -30,59 +27,12 @@ async function fetchCoachPublic(coachId) {
 }
 
 export function AuthProvider({ children }) {
-  const [user,    setUser]    = useState(null)
+  const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [googleRedirectOutcome, setGoogleRedirectOutcome] = useState(null)
   const [googleRedirectError, setGoogleRedirectError] = useState(null)
   const [googleRedirectReady, setGoogleRedirectReady] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        const cred = await getRedirectResult(auth)
-        if (cancelled || !cred) return
-        const intent = readGoogleAuthIntent()
-        const outcome = await resolveGoogleCredential(cred)
-        if (!cancelled) {
-          setGoogleRedirectOutcome({ ...outcome, intent })
-        }
-      } catch (err) {
-        if (!cancelled) setGoogleRedirectError(err)
-      } finally {
-        setGoogleRedirectReady(true)
-      }
-    })()
-    return () => { cancelled = true }
-  }, [])
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (fireUser) => {
-      try {
-        setUser(fireUser)
-        if (fireUser) {
-          const snap = await getDoc(doc(db, 'users', fireUser.uid))
-          const data = snap.exists() ? snap.data() : null
-          setProfile(data)
-          if (data?.role === 'coach') {
-            try {
-              await syncCoachPublic(fireUser.uid, data.name, data.boxName)
-            } catch {
-              /* no bloquear la app si falla coaches_public */
-            }
-          }
-        } else {
-          setProfile(null)
-        }
-      } catch {
-        setProfile(null)
-      } finally {
-        setLoading(false)
-      }
-    })
-    return unsub
-  }, [])
 
   async function syncCoachPublic(coachId, name, boxName) {
     if (!coachId || !name) return
@@ -93,10 +43,21 @@ export function AuthProvider({ children }) {
     }, { merge: true })
   }
 
-  async function validateCoachId(coachId) {
-    if (!coachId?.trim()) {
-      throw new Error('INVALID_COACH')
+  async function applyFirestoreProfile(fireUser) {
+    const { data } = await fetchUserProfile(fireUser.uid)
+    setProfile(data)
+    if (data?.role === 'coach') {
+      try {
+        await syncCoachPublic(fireUser.uid, data.name, data.boxName)
+      } catch {
+        /* coaches_public opcional */
+      }
     }
+    return data
+  }
+
+  async function validateCoachId(coachId) {
+    if (!coachId?.trim()) throw new Error('INVALID_COACH')
     const coach = await fetchCoachPublic(coachId.trim())
     if (!coach) throw new Error('INVALID_COACH')
     return coach
@@ -104,14 +65,10 @@ export function AuthProvider({ children }) {
 
   async function loginEmail(email, password) {
     const cred = await signInWithEmailAndPassword(auth, email, password)
-    const snap = await getDoc(doc(db, 'users', cred.user.uid))
-    const data = snap.exists() ? snap.data() : null
+    setUser(cred.user)
+    const { data, needsRegistration } = await fetchUserProfile(cred.user.uid)
     setProfile(data)
-    return {
-      user: cred.user,
-      profile: data,
-      needsRegistration: !snap.exists(),
-    }
+    return { user: cred.user, profile: data, needsRegistration }
   }
 
   async function registerEmail(email, password, name, role, coachId = null) {
@@ -133,22 +90,17 @@ export function AuthProvider({ children }) {
       createdAt: serverTimestamp(),
     }
     await setDoc(doc(db, 'users', cred.user.uid), profileData)
-    if (role === 'coach') {
-      await syncCoachPublic(cred.user.uid, name, name)
-    }
+    if (role === 'coach') await syncCoachPublic(cred.user.uid, name, name)
+    setUser(cred.user)
     setProfile(profileData)
     return { user: cred.user, profile: profileData }
   }
 
   async function resolveGoogleCredential(cred) {
-    const ref = doc(db, 'users', cred.user.uid)
-    const snap = await getDoc(ref)
-    if (!snap.exists()) {
-      return { user: cred.user, profile: null, needsRegistration: true }
-    }
-    const data = snap.data()
+    setUser(cred.user)
+    const { data, needsRegistration } = await fetchUserProfile(cred.user.uid)
     setProfile(data)
-    return { user: cred.user, profile: data, needsRegistration: false }
+    return { user: cred.user, profile: data, needsRegistration }
   }
 
   async function loginGoogle(intent = {}) {
@@ -161,9 +113,9 @@ export function AuthProvider({ children }) {
       const cred = await signInWithPopup(auth, googleProvider)
       return resolveGoogleCredential(cred)
     } catch (err) {
-      if (err.code === 'auth/popup-closed-by-user') {
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         const e = new Error('POPUP_CLOSED')
-        e.code = 'auth/popup-closed-by-user'
+        e.code = err.code
         throw e
       }
       throw err
@@ -196,33 +148,26 @@ export function AuthProvider({ children }) {
       createdAt: serverTimestamp(),
     }
     await setDoc(doc(db, 'users', fireUser.uid), profileData)
-    if (role === 'coach') {
-      await syncCoachPublic(fireUser.uid, profileData.name, profileData.name)
-    }
+    if (role === 'coach') await syncCoachPublic(fireUser.uid, profileData.name, profileData.name)
+    setUser(fireUser)
     setProfile(profileData)
     return profileData
   }
 
   async function updateLang(lang) {
     if (!user) return
-    const ref = doc(db, 'users', user.uid)
-    await setDoc(ref, { lang }, { merge: true })
+    await setDoc(doc(db, 'users', user.uid), { lang }, { merge: true })
     setProfile(p => ({ ...p, lang }))
   }
 
   async function updateWhatsAppPhone(whatsappPhone, whatsappDisplay) {
     if (!user) return
-    const ref = doc(db, 'users', user.uid)
-    await setDoc(ref, {
+    await setDoc(doc(db, 'users', user.uid), {
       whatsappPhone,
       whatsappDisplay: whatsappDisplay || null,
       whatsappUpdatedAt: serverTimestamp(),
     }, { merge: true })
-    setProfile(p => ({
-      ...p,
-      whatsappPhone,
-      whatsappDisplay: whatsappDisplay || null,
-    }))
+    setProfile(p => ({ ...p, whatsappDisplay: whatsappDisplay || null, whatsappPhone }))
   }
 
   async function logout() {
@@ -230,6 +175,53 @@ export function AuthProvider({ children }) {
     setUser(null)
     setProfile(null)
   }
+
+  useEffect(() => {
+    let cancelled = false
+    let unsubscribe = () => {}
+
+    ;(async () => {
+      if (prefersGoogleRedirect()) {
+        try {
+          const cred = await consumeGoogleRedirectResult()
+          if (cred && !cancelled) {
+            setUser(cred.user)
+            const intent = readGoogleAuthIntent()
+            const outcome = await resolveGoogleCredential(cred)
+            if (!cancelled) setGoogleRedirectOutcome({ ...outcome, intent })
+          }
+        } catch (err) {
+          if (!cancelled) setGoogleRedirectError(err)
+        }
+      }
+      if (!cancelled) setGoogleRedirectReady(true)
+
+      if (cancelled) return
+
+      unsubscribe = onAuthStateChanged(auth, async (fireUser) => {
+        if (cancelled) return
+        setUser(fireUser)
+        if (!fireUser) {
+          setProfile(null)
+          setLoading(false)
+          return
+        }
+        try {
+          await applyFirestoreProfile(fireUser)
+        } catch (err) {
+          console.error('[auth] Error cargando perfil:', err)
+          setProfile(null)
+        } finally {
+          if (!cancelled) setLoading(false)
+        }
+      })
+    })()
+
+    return () => {
+      cancelled = true
+      unsubscribe()
+    }
+  }, [])
 
   return (
     <AuthCtx.Provider value={{

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../firebase'
+import { auth, db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useLang } from '../context/LangContext'
 import {
@@ -19,7 +19,8 @@ import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { AuthDivider } from '../components/AuthDivider'
 
 export default function Register() {
-  const { user, registerEmail, loginGoogle, finishGoogleRegistration } = useAuth()
+  const { user, profile, loading: authLoading, registerEmail, loginGoogle, finishGoogleRegistration } = useAuth()
+  const postGoogleHandled = useRef(false)
   const { lang, setLang } = useLang()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -54,6 +55,64 @@ export default function Register() {
     const fromGoogle = user?.displayName?.trim()
     if (fromGoogle) setName(fromGoogle)
   }, [isGoogle, user?.displayName, name])
+
+  /** Solo tras redirect móvil (en escritorio el popup no recarga la página). */
+  useEffect(() => {
+    if (!prefersGoogleRedirect()) return
+    if (authLoading || postGoogleHandled.current) return
+
+    const sessionUser = user || auth.currentUser
+    if (!sessionUser) return
+
+    const isGoogleUser = sessionUser.providerData?.some(p => p.providerId === 'google.com')
+    if (!isGoogleUser) return
+
+    if (profile?.role) {
+      postGoogleHandled.current = true
+      navigate(profile.role === 'athlete' ? '/athlete' : '/coach', { replace: true })
+      return
+    }
+
+    let cancelled = false
+
+    async function afterGoogle() {
+      if (role === 'coach') {
+        postGoogleHandled.current = true
+        setBusy(true)
+        try {
+          const displayName =
+            sessionUser.displayName?.trim()
+            || sessionUser.email?.split('@')[0]
+            || 'Coach'
+          await finishGoogleRegistration('coach', displayName)
+          clearInviteSession()
+          if (!cancelled) navigate('/coach', { replace: true })
+        } catch (err) {
+          postGoogleHandled.current = false
+          if (!cancelled) {
+            setError(authErrorMessage(err))
+            navigate('/register?google=1&role=coach', { replace: true })
+          }
+        } finally {
+          if (!cancelled) setBusy(false)
+        }
+        return
+      }
+
+      if (params.get('google') !== '1') {
+        const q = new URLSearchParams(params)
+        q.set('google', '1')
+        if (!q.get('role')) q.set('role', role)
+        navigate(`/register?${q.toString()}`, { replace: true })
+      }
+    }
+
+    afterGoogle()
+    return () => { cancelled = true }
+  }, [
+    authLoading, user, profile, role, params, navigate,
+    finishGoogleRegistration,
+  ])
 
   useEffect(() => {
     if (!coachId || coachLabel) return
@@ -122,6 +181,16 @@ export default function Register() {
       })
       const result = await loginGoogle(intent)
       if (result?.redirecting) return
+
+      if (result.needsRegistration && role === 'coach') {
+        const u = result.user
+        const displayName = u?.displayName?.trim() || u?.email?.split('@')[0] || 'Coach'
+        await finishGoogleRegistration('coach', displayName)
+        clearInviteSession()
+        navigate('/coach', { replace: true })
+        return
+      }
+
       routeAfterGoogleAuth(result, { navigate, params, invite })
     } catch (err) {
       setError(authErrorMessage(err))
@@ -139,6 +208,17 @@ export default function Register() {
   const primaryLabel = isGoogle
     ? (lang === 'es' ? 'Guardar y continuar' : 'Save and continue')
     : (lang === 'es' ? 'Crear cuenta' : 'Create account')
+
+  const sessionUser = user || auth.currentUser
+  if (authLoading || (prefersGoogleRedirect() && sessionUser && !profile?.role && role === 'coach')) {
+    return (
+      <div style={{ minHeight: '100vh', background: W.c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontFamily: W.font.mono, fontSize: 12, color: W.c.mute }}>
+          {lang === 'es' ? 'Creando tu cuenta…' : 'Setting up your account…'}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: W.c.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>

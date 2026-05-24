@@ -43,7 +43,7 @@ export function routeAfterGoogleAuth({ needsRegistration, profile, intent }, { n
       q.set('role', 'athlete')
       q.set('coach', coachFromIntent)
       if (nameFromIntent) q.set('from', nameFromIntent)
-    } else if (intent?.registerRole === 'coach') {
+    } else if (intent?.registerRole === 'coach' || params?.get('role') === 'coach') {
       q.set('role', 'coach')
     } else if (invite?.isAthleteInvite) {
       q.set('role', 'athlete')

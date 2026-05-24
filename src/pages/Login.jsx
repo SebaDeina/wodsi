@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useLang } from '../context/LangContext'
 import { parseInviteSearchParams, saveInviteToSession } from '../lib/invite'
+import { auth } from '../firebase'
 import { prefersGoogleRedirect } from '../lib/googleAuth'
 import { buildGoogleAuthIntent, redirectAfterLogin, routeAfterGoogleAuth } from '../lib/googleAuthFlow'
 import { W } from '../tokens'
@@ -35,6 +36,14 @@ export default function Login() {
       setError(lang === 'es' ? 'No se pudo completar el inicio con Google.' : 'Could not complete Google sign-in.')
     }
   }, [params, lang])
+
+  // Auto-redirect cuando ya hay sesión activa — cubre el redirect flow de Google
+  // que vuelve a /login sin haber navegado aún
+  useEffect(() => {
+    if (!authLoading && user && profile?.role) {
+      redirectAfterLogin(profile, { navigate, params })
+    }
+  }, [authLoading, user, profile, navigate, params])
 
   function registerLink() {
     if (invite.isAthleteInvite) {
@@ -103,10 +112,13 @@ export default function Login() {
     outline: 'none', boxSizing: 'border-box',
   }
 
-  if (authLoading || (user && profile?.role)) {
+  const sessionUser = user || auth.currentUser
+  if (authLoading || sessionUser) {
     return (
       <div style={{ minHeight: '100vh', background: W.c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontFamily: W.font.mono, fontSize: 12, color: W.c.mute }}>…</div>
+        <div style={{ fontFamily: W.font.mono, fontSize: 12, color: W.c.mute }}>
+          {lang === 'es' ? 'Ingresando…' : 'Signing in…'}
+        </div>
       </div>
     )
   }

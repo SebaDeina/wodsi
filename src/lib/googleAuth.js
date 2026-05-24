@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'wodsi_google_auth'
 
-/** Popup de Google suele fallar en móvil; redirect permite elegir cuenta. */
+/** Popup en escritorio (ventana de Google). Redirect solo en móvil/tablet táctil. */
 export function prefersGoogleRedirect() {
   if (typeof window === 'undefined') return false
   const ua = navigator.userAgent || ''
@@ -20,6 +20,15 @@ export function saveGoogleAuthIntent(intent) {
   }
 }
 
+export function peekGoogleAuthIntent() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
 export function readGoogleAuthIntent() {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
@@ -27,5 +36,13 @@ export function readGoogleAuthIntent() {
     return raw ? JSON.parse(raw) : null
   } catch {
     return null
+  }
+}
+
+export function clearGoogleAuthIntent() {
+  try {
+    sessionStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* ignore */
   }
 }

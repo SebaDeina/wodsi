@@ -1,32 +1,31 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { auth } from '../firebase'
 import { W } from '../tokens'
+
+function AuthSpinner() {
+  return (
+    <div style={{ minHeight: '100vh', background: W.c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontFamily: W.font.mono, fontSize: 12, color: W.c.mute, letterSpacing: 1 }}>LOADING…</div>
+    </div>
+  )
+}
 
 // role: 'coach' | 'athlete' | null (any authenticated user)
 export function ProtectedRoute({ children, role }) {
   const { user, profile, loading } = useAuth()
   const location = useLocation()
+  const sessionUser = user || auth.currentUser
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', background: W.c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontFamily: W.font.mono, fontSize: 12, color: W.c.mute, letterSpacing: 1 }}>LOADING…</div>
-      </div>
-    )
-  }
+  if (loading) return <AuthSpinner />
 
-  if (!user) {
+  if (!sessionUser) {
     const next = encodeURIComponent(location.pathname + location.search)
     return <Navigate to={`/login?next=${next}`} replace />
   }
 
-  // Sesión Firebase sin perfil en Firestore (registro incompleto)
-  if (!profile) {
-    const usedGoogle = user.providerData?.some(p => p.providerId === 'google.com')
-    const target = usedGoogle
-      ? `/register?google=1${role === 'coach' ? '&role=coach' : role === 'athlete' ? '&role=athlete' : ''}`
-      : `/register${role === 'coach' ? '?role=coach' : role === 'athlete' ? '?role=athlete' : ''}`
-    return <Navigate to={target} replace />
+  if (!profile?.role) {
+    return <AuthSpinner />
   }
 
   if (role && profile.role !== role) {
