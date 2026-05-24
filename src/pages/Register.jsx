@@ -80,7 +80,9 @@ export default function Register() {
     if (err.code === 'auth/email-already-in-use') {
       return lang === 'es' ? 'Ese correo ya está registrado.' : 'That email is already registered.'
     }
-    return err.message
+    return lang === 'es'
+      ? 'No pudimos completar el registro. Revisá los datos e intentá de nuevo.'
+      : 'We could not complete registration. Check your details and try again.'
   }
 
   async function completeRegistration(selectedRole, selectedName, selectedCoachId) {
@@ -90,7 +92,7 @@ export default function Register() {
       await registerEmail(email, password, selectedName, selectedRole, selectedRole === 'athlete' ? selectedCoachId : null)
     }
     clearInviteSession()
-    navigate(selectedRole === 'athlete' ? '/athlete/onboarding' : '/coach')
+    navigate(selectedRole === 'athlete' ? '/athlete/onboarding' : '/coach/onboarding')
   }
 
   async function handleSubmit(e) {
@@ -126,7 +128,7 @@ export default function Register() {
         const displayName = u?.displayName?.trim() || u?.email?.split('@')[0] || 'Coach'
         await finishGoogleRegistration('coach', displayName)
         clearInviteSession()
-        navigate('/coach', { replace: true })
+        navigate('/coach/onboarding', { replace: true })
         return
       }
 

@@ -84,8 +84,12 @@ export default function CoachNuevoWod() {
           setGroupId(data.groupId || '')
           setAthleteId(data.athleteId || '')
         }
-      } catch (err) {
-        if (!cancelled) setError(err.message)
+      } catch {
+        if (!cancelled) {
+          setError(lang === 'es'
+            ? 'No pudimos cargar esta planificación. Actualizá la página o volvé a intentarlo.'
+            : 'We could not load this programming. Refresh the page or try again.')
+        }
       } finally {
         if (!cancelled) setLoadingDoc(false)
       }
@@ -155,8 +159,10 @@ export default function CoachNuevoWod() {
         })
       }
       navigate('/coach/planner')
-    } catch (err) {
-      setError(err.message)
+    } catch {
+      setError(lang === 'es'
+        ? 'No pudimos guardar la planificación. Revisá los datos e intentá de nuevo.'
+        : 'We could not save the programming. Check the details and try again.')
     } finally {
       setBusy(false)
     }

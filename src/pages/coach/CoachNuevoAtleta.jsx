@@ -72,8 +72,10 @@ export default function CoachNuevoAtleta() {
     try {
       await updateDoc(doc(db, 'users', athleteId), { coachId: null })
       setHiddenIds(prev => [...prev, athleteId])
-    } catch (err) {
-      alert(err.message)
+    } catch {
+      alert(lang === 'es'
+        ? 'No pudimos desvincular al atleta. Intentá de nuevo.'
+        : 'We could not remove the athlete. Try again.')
     } finally {
       setRemoving(null)
     }
@@ -112,8 +114,8 @@ export default function CoachNuevoAtleta() {
             </div>
             <p style={{ fontSize: 14, color: W.c.dim, marginTop: 0, marginBottom: 16, lineHeight: 1.6 }}>
               {lang === 'es'
-                ? 'No hace falta copiar tu ID técnico. El atleta abre el link, elige Google y ya queda vinculado a vos.'
-                : 'No need to copy a technical ID. Athletes open the link, pick Google, and they are linked to you.'}
+                ? 'El atleta abre este link, elige Google y queda vinculado a tu roster.'
+                : 'Athletes open this link, use Google, and join your roster.'}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: W.c.bg2, borderRadius: 10, padding: '14px 18px', marginBottom: 14 }}>
               <span style={{ fontFamily: W.font.mono, fontSize: 12, color: W.c.text, flex: 1, wordBreak: 'break-all' }}>

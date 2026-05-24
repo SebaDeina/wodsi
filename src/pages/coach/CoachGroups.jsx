@@ -86,8 +86,10 @@ export default function CoachGroups() {
       }
       setEditingId(null)
       setForm(emptyForm())
-    } catch (err) {
-      setError(err.message)
+    } catch {
+      setError(lang === 'es'
+        ? 'No pudimos guardar el grupo. Intentá de nuevo.'
+        : 'We could not save the group. Try again.')
     } finally {
       setBusy(false)
     }
@@ -105,8 +107,10 @@ export default function CoachGroups() {
         setEditingId(null)
         setForm(emptyForm())
       }
-    } catch (err) {
-      setError(err.message)
+    } catch {
+      setError(lang === 'es'
+        ? 'No pudimos eliminar el grupo. Intentá de nuevo.'
+        : 'We could not delete the group. Try again.')
     } finally {
       setBusy(false)
     }

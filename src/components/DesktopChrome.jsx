@@ -20,10 +20,10 @@ const NAV_ITEMS = [
 // 5 tabs más usados en mobile
 const MOBILE_TABS = [
   { k: 'dashboard',    icon: '◧', path: '/coach' },
-  { k: 'athletes_nav', icon: '◐', path: '/coach/athletes' },
   { k: 'planning',     icon: '◫', path: '/coach/planner' },
+  { k: 'athletes_nav', icon: '◐', path: '/coach/athletes' },
+  { k: 'groups_nav',   icon: '◉', path: '/coach/groups' },
   { k: 'whatsapp',     icon: '◰', path: '/coach/whatsapp' },
-  { k: 'settings',     icon: '◎', path: '/settings' },
 ]
 
 const SIDEBAR_W = 232

@@ -24,6 +24,7 @@ import { Btn } from '../../components/Btn'
 import { Tag } from '../../components/Tag'
 
 const WA = '#25D366'
+const SUPPORT_EMAIL = 'soporte@wodsi.app'
 
 const PAGE_TABS = [
   { id: 'inicio', es: 'Inicio', en: 'Home' },
@@ -74,6 +75,53 @@ function StatChip({ label, value, tone }) {
       </div>
     </div>
   )
+}
+
+function supportHref(context, lang) {
+  const subject = encodeURIComponent(lang === 'es' ? `Ayuda con ${context}` : `Help with ${context}`)
+  const body = encodeURIComponent(lang === 'es'
+    ? `Hola, necesito ayuda con ${context}.`
+    : `Hi, I need help with ${context}.`)
+  return `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`
+}
+
+function SupportButton({ context, lang, style }) {
+  return (
+    <a
+      href={supportHref(context, lang)}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '8px 12px',
+        borderRadius: 8,
+        border: `1px solid ${W.c.lineDim}`,
+        background: W.c.cardHi,
+        color: W.c.text,
+        fontFamily: W.font.sans,
+        fontSize: 13,
+        fontWeight: 600,
+        textDecoration: 'none',
+        ...style,
+      }}
+    >
+      {lang === 'es' ? 'Contactar soporte' : 'Contact support'}
+    </a>
+  )
+}
+
+function friendlyConnectionMessage(lang) {
+  return lang === 'es'
+    ? 'No pudimos conectar WhatsApp. Probá de nuevo en unos segundos. Si el problema sigue, contactá a soporte.'
+    : 'We could not connect WhatsApp. Try again in a few seconds. If it continues, contact support.'
+}
+
+function friendlySendStatus(status, lang) {
+  if (status === 'sent') return lang === 'es' ? 'Enviado' : 'Sent'
+  if (status === 'failed') return lang === 'es' ? 'No enviado' : 'Not sent'
+  if (status === 'queued') return lang === 'es' ? 'En espera' : 'Queued'
+  if (status === 'sending') return lang === 'es' ? 'Enviando' : 'Sending'
+  return lang === 'es' ? 'Pendiente' : 'Pending'
 }
 
 export default function CoachWhatsApp() {
@@ -180,7 +228,9 @@ export default function CoachWhatsApp() {
       })
       setSendOk(true)
     } catch {
-      setSendError(lang === 'es' ? 'No se pudo encolar el envío.' : 'Could not queue the message.')
+      setSendError(lang === 'es'
+        ? 'No pudimos preparar el envío. Revisá la conexión de WhatsApp o contactá a soporte.'
+        : 'We could not prepare the send. Check WhatsApp connection or contact support.')
     } finally {
       setSending(false)
     }
@@ -256,11 +306,16 @@ export default function CoachWhatsApp() {
       )}
       {connectionStatus === 'connecting' && !qrDataUrl && (
         <p style={{ fontSize: 12, color: W.c.orange, marginTop: 12 }}>
-          {lang === 'es' ? 'Generando QR… ¿Tenés el worker corriendo?' : 'Generating QR… Is the worker running?'}
+          {lang === 'es' ? 'Preparando el QR. Esto puede tardar unos segundos.' : 'Preparing the QR. This can take a few seconds.'}
         </p>
       )}
       {!connected && lastError && (
-        <p style={{ fontSize: 11, color: W.c.red, marginTop: 10 }}>{lastError}</p>
+        <div style={{ marginTop: 12, padding: 12, borderRadius: 10, background: `${W.c.red}10`, border: `1px solid ${W.c.red}35` }}>
+          <p style={{ fontSize: 13, color: W.c.text, margin: 0, lineHeight: 1.45 }}>
+            {friendlyConnectionMessage(lang)}
+          </p>
+          <SupportButton context="WhatsApp" lang={lang} style={{ marginTop: 10 }} />
+        </div>
       )}
       <div style={{ marginTop: 16 }}>
         <Btn ghost sm disabled={connecting} onClick={handleConnect}>
@@ -290,7 +345,11 @@ export default function CoachWhatsApp() {
       />
 
       {error && (
-        <div style={{ padding: '10px 32px', color: W.c.red, fontFamily: W.font.mono, fontSize: 12 }}>{error}</div>
+        <div style={{ padding: '10px 32px', color: W.c.red, fontSize: 13 }}>
+          {lang === 'es'
+            ? 'No pudimos cargar la configuración de WhatsApp. Actualizá la página o contactá a soporte.'
+            : 'We could not load WhatsApp settings. Refresh the page or contact support.'}
+        </div>
       )}
 
       <WaTabs pageTab={pageTab} setPageTab={setPageTab} lang={lang} />
@@ -319,9 +378,10 @@ export default function CoachWhatsApp() {
                 </div>
                 <p style={{ fontSize: 13, color: W.c.dim, margin: '8px 0 0', lineHeight: 1.5 }}>
                   {lang === 'es'
-                    ? 'Revisá que el worker esté activo, que WhatsApp siga conectado y que el atleta tenga el número bien cargado en Perfil.'
-                    : 'Check the worker is running, WhatsApp is connected, and the athlete saved their number in Profile.'}
+                    ? 'Revisá que WhatsApp siga conectado y que el atleta tenga bien cargado su número. Si vuelve a fallar, pedí ayuda a soporte.'
+                    : 'Check WhatsApp is still connected and the athlete phone number is correct. If it fails again, contact support.'}
                 </p>
+                <SupportButton context="envíos de WhatsApp" lang={lang} style={{ marginTop: 12 }} />
               </div>
             )}
 
@@ -378,9 +438,9 @@ export default function CoachWhatsApp() {
                 <div key={item.id} style={{ marginBottom: 10 }}>
                   <div style={{
                     display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 13, color: W.c.dim,
-                  }}>
+                    }}>
                     <Tag tone={item.status === 'sent' ? 'lime' : item.status === 'failed' ? 'red' : 'mute'} sm>
-                      {item.status}
+                      {friendlySendStatus(item.status, lang)}
                     </Tag>
                     <span style={{ fontWeight: 500, color: W.c.text }}>{item.athleteName || '—'}</span>
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -389,7 +449,9 @@ export default function CoachWhatsApp() {
                   </div>
                   {item.status === 'failed' && item.error && (
                     <div style={{ fontSize: 11, color: W.c.red, marginTop: 4, marginLeft: 2 }}>
-                      {item.error}
+                      {lang === 'es'
+                        ? 'No se pudo enviar. Revisá el número del atleta o contactá a soporte.'
+                        : 'Could not send. Check the athlete phone number or contact support.'}
                     </div>
                   )}
                 </div>
@@ -637,9 +699,9 @@ export default function CoachWhatsApp() {
                 {lang === 'es' ? 'Pasos' : 'Steps'}
               </div>
               {[
-                lang === 'es' ? 'Corré el worker en tu Mac (una vez por sesión de desarrollo).' : 'Run the worker on your Mac (once per dev session).',
-                lang === 'es' ? 'Tocá Conectar y escaneá el QR con tu celular.' : 'Tap Connect and scan the QR with your phone.',
-                lang === 'es' ? 'Listo: los mensajes salen de tu número.' : 'Done: messages go out from your number.',
+                lang === 'es' ? 'Tocá Conectar WhatsApp.' : 'Tap Connect WhatsApp.',
+                lang === 'es' ? 'Escaneá el QR desde WhatsApp en tu celular.' : 'Scan the QR from WhatsApp on your phone.',
+                lang === 'es' ? 'Cuando figure Activo, los mensajes salen desde tu número.' : 'When it says Active, messages are sent from your number.',
               ].map((step, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 10, fontSize: 13, color: W.c.dim, lineHeight: 1.45 }}>
                   <span style={{
@@ -653,16 +715,14 @@ export default function CoachWhatsApp() {
             </div>
             <details style={{ ...card, fontSize: 12, color: W.c.mute, lineHeight: 1.5 }}>
               <summary style={{ cursor: 'pointer', fontWeight: 600, color: W.c.dim }}>
-                {lang === 'es' ? 'Ayuda técnica (desarrollo)' : 'Technical help (development)'}
+                {lang === 'es' ? '¿Necesitás ayuda?' : 'Need help?'}
               </summary>
-              <p style={{ marginTop: 12, fontFamily: W.font.mono }}>
-                npm run whatsapp:dev
-              </p>
-              <p style={{ marginTop: 8 }}>
+              <p style={{ marginTop: 12 }}>
                 {lang === 'es'
-                  ? 'Clave Firebase en services/whatsapp-worker/ (no subir a git).'
-                  : 'Firebase key in services/whatsapp-worker/ (do not commit).'}
+                  ? 'Si el QR no aparece o los mensajes no salen, contactá a soporte y te ayudamos a revisar la conexión.'
+                  : 'If the QR does not appear or messages are not sent, contact support and we will help you check the connection.'}
               </p>
+              <SupportButton context="conexión de WhatsApp" lang={lang} />
             </details>
           </div>
         )}

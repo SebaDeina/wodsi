@@ -72,8 +72,10 @@ export default function AthleteOnboarding() {
       }
 
       navigate('/athlete', { replace: true })
-    } catch (err) {
-      setError(err.message)
+    } catch {
+      setError(lang === 'es'
+        ? 'No pudimos guardar tu WhatsApp. Revisá el número e intentá de nuevo.'
+        : 'We could not save your WhatsApp. Check the number and try again.')
       setBusy(false)
     }
   }

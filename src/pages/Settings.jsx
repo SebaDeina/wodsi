@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useLang } from '../context/LangContext'
@@ -10,12 +9,13 @@ import { Avatar } from '../components/Avatar'
 import { AthleteShell } from '../components/AthleteShell'
 import { CoachBillingSettings } from '../components/CoachBillingSettings'
 import { AthleteWhatsAppSettings } from '../components/AthleteWhatsAppSettings'
+import { useIsMobile } from '../hooks/useBreakpoint'
 
 export default function Settings() {
   const { user, profile, updateLang, updateWhatsAppPhone, logout } = useAuth()
   const { lang, setLang } = useLang()
   const navigate = useNavigate()
-  const [copied, setCopied] = useState(false)
+  const isMobile = useIsMobile(1024)
 
   const isCoach = profile?.role === 'coach'
 
@@ -29,16 +29,26 @@ export default function Settings() {
     navigate('/login')
   }
 
-  function copyId() {
-    navigator.clipboard.writeText(user?.uid || '')
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const cardStyle = {
+    background: W.c.card,
+    borderRadius: 12,
+    padding: isMobile ? 18 : 24,
+    border: `1px solid ${W.c.lineDim}`,
   }
 
   const content = (
-    <div style={{ maxWidth: 560, padding: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{
+      width: '100%',
+      maxWidth: isCoach ? 1120 : 560,
+      padding: isMobile ? '16px 16px 96px' : 32,
+      boxSizing: 'border-box',
+      display: 'grid',
+      gridTemplateColumns: isCoach && !isMobile ? 'minmax(280px, 0.85fr) minmax(420px, 1.4fr)' : '1fr',
+      gap: isMobile ? 16 : 24,
+      alignItems: 'start',
+    }}>
       {/* Profile card */}
-      <div style={{ background: W.c.card, borderRadius: 16, padding: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 16 }}>
         <Avatar name={profile?.name?.slice(0,2) || user?.email?.slice(0,2) || '?'} size={56} tone="lime" />
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 700, fontSize: 18, fontFamily: W.font.display }}>{profile?.name || user?.displayName || '—'}</div>
@@ -52,7 +62,7 @@ export default function Settings() {
       </div>
 
       {/* Language */}
-      <div style={{ background: W.c.card, borderRadius: 16, padding: 24 }}>
+      <div style={cardStyle}>
         <div style={{ fontSize: 12, fontFamily: W.font.mono, color: W.c.mute, letterSpacing: 0.8, marginBottom: 16 }}>
           {lang === 'es' ? 'IDIOMA' : 'LANGUAGE'}
         </div>
@@ -72,39 +82,34 @@ export default function Settings() {
       </div>
 
       {isCoach && (
-        <div style={{ background: W.c.card, borderRadius: 16, padding: 24 }}>
+        <div style={{
+          ...cardStyle,
+          gridColumn: !isMobile ? '2 / 3' : undefined,
+          gridRow: !isMobile ? '1 / span 4' : undefined,
+        }}>
           <CoachBillingSettings lang={lang} />
         </div>
       )}
 
-      {/* Coach ID (for coaches to share with athletes) */}
+      {/* Invite athletes */}
       {isCoach && (
-        <div style={{ background: W.c.card, borderRadius: 16, padding: 24 }}>
+        <div style={cardStyle}>
           <div style={{ fontSize: 12, fontFamily: W.font.mono, color: W.c.mute, letterSpacing: 0.8, marginBottom: 10 }}>
-            {lang === 'es' ? 'TU ID DE COACH' : 'YOUR COACH ID'}
+            {lang === 'es' ? 'INVITAR ATLETAS' : 'INVITE ATHLETES'}
           </div>
           <div style={{ fontSize: 13, color: W.c.dim, marginBottom: 16, lineHeight: 1.5 }}>
-            {lang === 'es' ? 'Compartí este ID con tus atletas para que puedan registrarse contigo.' : 'Share this ID with your athletes so they can register with you.'}
+            {lang === 'es'
+              ? 'Usá el link de invitación para sumar atletas sin copiar códigos internos.'
+              : 'Use the invite link to add athletes without copying internal codes.'}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: W.c.bg2, borderRadius: 10, padding: '12px 16px' }}>
-            <span style={{ fontFamily: W.font.mono, fontSize: 13, color: W.c.text, flex: 1, wordBreak: 'break-all' }}>
-              {user?.uid || '—'}
-            </span>
-            <button onClick={copyId} style={{
-              padding: '8px 14px', borderRadius: 8, border: 'none',
-              background: copied ? W.c.lime : W.c.cardHi,
-              color: copied ? W.c.bg : W.c.text,
-              fontFamily: W.font.mono, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-              letterSpacing: 0.5, flexShrink: 0,
-            }}>
-              {copied ? '✓ COPIADO' : (lang === 'es' ? 'COPIAR' : 'COPY')}
-            </button>
-          </div>
+          <Btn ghost sm onClick={() => navigate('/coach/athletes/new')}>
+            {lang === 'es' ? 'Abrir invitación' : 'Open invite'}
+          </Btn>
         </div>
       )}
 
       {/* Logout */}
-      <div style={{ background: W.c.card, borderRadius: 16, padding: 24 }}>
+      <div style={cardStyle}>
         <Btn ghost onClick={handleLogout} style={{ color: W.c.red, boxShadow: `inset 0 0 0 1px ${W.c.red}40` }}>
           {lang === 'es' ? 'Cerrar sesión' : 'Sign out'}
         </Btn>

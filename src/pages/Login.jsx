@@ -63,7 +63,9 @@ export default function Login() {
     if (err.code === 'auth/invalid-credential') {
       return lang === 'es' ? 'Email o contraseña incorrectos.' : 'Invalid email or password.'
     }
-    return err.message
+    return lang === 'es'
+      ? 'No pudimos iniciar sesión. Revisá los datos e intentá de nuevo.'
+      : 'We could not sign you in. Check your details and try again.'
   }
 
   async function handleEmail(e) {

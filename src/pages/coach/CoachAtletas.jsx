@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
@@ -25,7 +25,7 @@ import { CoachHeader } from './CoachHeader'
 
 const TONES = ['lime', 'orange', 'blue', 'violet']
 
-const GRID = '2fr 0.9fr 0.65fr 1.1fr 0.85fr 1fr 0.55fr'
+const GRID = '2fr 0.9fr 0.65fr 1.35fr 0.85fr 1fr 0.55fr'
 
 const dayInp = {
   width: 52,
@@ -40,6 +40,32 @@ const dayInp = {
   boxSizing: 'border-box',
 }
 
+const paymentPillBase = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  padding: '4px 8px',
+  borderRadius: 999,
+  fontFamily: W.font.mono,
+  fontSize: 10,
+  fontWeight: 700,
+  whiteSpace: 'nowrap',
+}
+
+const paymentActionBtn = {
+  appearance: 'none',
+  padding: '6px 10px',
+  borderRadius: 7,
+  border: `1px solid ${W.c.lineDim}`,
+  background: W.c.cardHi,
+  color: W.c.text,
+  cursor: 'pointer',
+  fontFamily: W.font.sans,
+  fontSize: 12,
+  fontWeight: 600,
+  whiteSpace: 'nowrap',
+}
+
 export default function CoachAtletas() {
   const { lang } = useLang()
   const navigate = useNavigate()
@@ -49,6 +75,7 @@ export default function CoachAtletas() {
   const [search, setSearch] = useState('')
   const [savingId, setSavingId] = useState(null)
   const [dueDayDrafts, setDueDayDrafts] = useState({})
+  const skipDueDayCommitRef = useRef(null)
   const currentMonth = billingMonthKey()
 
   async function patchAthlete(athlete, patch) {
@@ -90,6 +117,11 @@ export default function CoachAtletas() {
   }
 
   async function commitDueDay(athlete) {
+    if (skipDueDayCommitRef.current === athlete.id) {
+      skipDueDayCommitRef.current = null
+      return
+    }
+
     const draft = dueDayDrafts[athlete.id]
     if (draft == null) return
 
@@ -244,6 +276,7 @@ export default function CoachAtletas() {
                           e.currentTarget.blur()
                         }
                         if (e.key === 'Escape') {
+                          skipDueDayCommitRef.current = a.id
                           clearDueDayDraft(a.id)
                           e.currentTarget.blur()
                         }
@@ -253,28 +286,35 @@ export default function CoachAtletas() {
                     />
                   </span>
                   <span>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={e => { e.stopPropagation(); togglePaidThisMonth(a) }}
-                      style={{
-                        appearance: 'none',
-                        padding: '8px 12px',
-                        borderRadius: 8,
-                        border: `1px solid ${paid ? `${W.c.lime}55` : pending ? `${W.c.orange}55` : `${W.c.red}55`}`,
-                        cursor: busy ? 'wait' : 'pointer',
-                        fontFamily: W.font.mono, fontSize: 11, fontWeight: 600, width: '100%',
-                        backgroundColor: paid ? `${W.c.lime}22` : pending ? `${W.c.orange}18` : `${W.c.red}18`,
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{
+                        ...paymentPillBase,
+                        background: paid ? `${W.c.lime}18` : pending ? `${W.c.orange}14` : `${W.c.red}14`,
                         color: paid ? W.c.lime : pending ? W.c.orange : W.c.red,
-                        boxShadow: `inset 0 0 0 1px ${W.c.bg2}`,
-                      }}
-                    >
-                      {paid
-                        ? (lang === 'es' ? '✓ Pagado' : '✓ Paid')
-                        : pending
-                          ? (lang === 'es' ? 'Pendiente' : 'Pending')
-                          : (lang === 'es' ? 'Sin pago' : 'Unpaid')}
-                    </button>
+                        border: `1px solid ${paid ? `${W.c.lime}40` : pending ? `${W.c.orange}40` : `${W.c.red}40`}`,
+                      }}>
+                        <span style={{ width: 6, height: 6, borderRadius: 3, background: 'currentColor' }} />
+                        {paid
+                          ? (lang === 'es' ? 'Pagado' : 'Paid')
+                          : pending
+                            ? (lang === 'es' ? 'Pendiente' : 'Pending')
+                            : (lang === 'es' ? 'Vencido' : 'Overdue')}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={e => { e.stopPropagation(); togglePaidThisMonth(a) }}
+                        style={{
+                          ...paymentActionBtn,
+                          cursor: busy ? 'wait' : 'pointer',
+                          color: paid ? W.c.orange : W.c.text,
+                        }}
+                      >
+                        {paid
+                          ? (lang === 'es' ? 'Desmarcar pago' : 'Mark unpaid')
+                          : (lang === 'es' ? 'Registrar pago' : 'Mark paid')}
+                      </button>
+                    </div>
                   </span>
                   <span style={{ fontFamily: W.font.mono, fontSize: 11, color: status === 'overdue' ? W.c.orange : W.c.dim }}>
                     {t(status, lang).toUpperCase()}
