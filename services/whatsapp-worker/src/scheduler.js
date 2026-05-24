@@ -123,33 +123,52 @@ export async function runScheduledRules(db) {
   }
 }
 
+async function welcomeAlreadyQueued(db, athleteId) {
+  const snap = await db.collection('whatsapp_outbox')
+    .where('athleteId', '==', athleteId)
+    .where('source', '==', 'signup')
+    .limit(1)
+    .get()
+  return !snap.empty
+}
+
+async function tryQueueSignupWelcome(db, athlete) {
+  const coachId = athlete.coachId
+  if (!coachId || !athlete.whatsappPhone) return
+
+  const settings = await db.collection('whatsapp_settings').doc(coachId).get()
+  if (!settings.exists || !settings.data()?.connected) return
+
+  if (await welcomeAlreadyQueued(db, athlete.id)) return
+
+  const rulesSnap = await db.collection('whatsapp_rules')
+    .where('coachId', '==', coachId)
+    .where('active', '==', true)
+    .where('triggerKey', '==', 'on_signup')
+    .limit(1)
+    .get()
+  if (rulesSnap.empty) return
+
+  const rule = { id: rulesSnap.docs[0].id, ...rulesSnap.docs[0].data() }
+  const billing = await getBilling(db, coachId)
+  await queueAutomated(db, coachId, athlete, rule, billing)
+}
+
 export function watchNewAthletes(db) {
   return db.collection('users')
     .where('role', '==', 'athlete')
     .onSnapshot(async (snap) => {
       for (const change of snap.docChanges()) {
-        if (change.type !== 'added') continue
         const athlete = { id: change.doc.id, ...change.doc.data() }
-        const coachId = athlete.coachId
-        if (!coachId || !athlete.whatsappPhone) continue
-
-        const createdMs = athlete.createdAt?.toMillis?.() ?? 0
-        if (!createdMs || Date.now() - createdMs > 5 * 60 * 1000) continue
-
-        const settings = await db.collection('whatsapp_settings').doc(coachId).get()
-        if (!settings.exists || !settings.data()?.connected) continue
-
-        const rulesSnap = await db.collection('whatsapp_rules')
-          .where('coachId', '==', coachId)
-          .where('active', '==', true)
-          .where('triggerKey', '==', 'on_signup')
-          .limit(1)
-          .get()
-        if (rulesSnap.empty) continue
-
-        const rule = { id: rulesSnap.docs[0].id, ...rulesSnap.docs[0].data() }
-        const billing = await getBilling(db, coachId)
-        await queueAutomated(db, coachId, athlete, rule, billing)
+        if (change.type === 'added') {
+          const createdMs = athlete.createdAt?.toMillis?.() ?? 0
+          if (!createdMs || Date.now() - createdMs > 5 * 60 * 1000) continue
+          await tryQueueSignupWelcome(db, athlete)
+          continue
+        }
+        if (change.type === 'modified') {
+          await tryQueueSignupWelcome(db, athlete)
+        }
       }
     })
 }

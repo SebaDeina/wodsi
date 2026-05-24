@@ -1,32 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useLang } from '../context/LangContext'
 import { W } from '../tokens'
 import { Btn } from '../components/Btn'
-import { normalizeWhatsAppPhone, formatWhatsAppDisplay, hasWhatsAppPhone } from '../lib/phone'
 import { DesktopChrome } from '../components/DesktopChrome'
 import { CoachHeader } from './coach/CoachHeader'
 import { Avatar } from '../components/Avatar'
 import { AthleteShell } from '../components/AthleteShell'
 import { CoachBillingSettings } from '../components/CoachBillingSettings'
+import { AthleteWhatsAppSettings } from '../components/AthleteWhatsAppSettings'
 
 export default function Settings() {
   const { user, profile, updateLang, updateWhatsAppPhone, logout } = useAuth()
   const { lang, setLang } = useLang()
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
-  const [waInput, setWaInput] = useState('')
-  const [waSaving, setWaSaving] = useState(false)
-  const [waError, setWaError] = useState('')
 
   const isCoach = profile?.role === 'coach'
-
-  useEffect(() => {
-    if (!isCoach && profile) {
-      setWaInput(profile.whatsappDisplay || profile.whatsappPhone || '')
-    }
-  }, [isCoach, profile?.whatsappPhone, profile?.whatsappDisplay])
 
   function handleLang(l) {
     setLang(l)
@@ -43,28 +34,6 @@ export default function Settings() {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
-
-  async function saveWhatsApp(e) {
-    e.preventDefault()
-    setWaError('')
-    const parsed = normalizeWhatsAppPhone(waInput)
-    if (!parsed.ok) {
-      setWaError(lang === 'es'
-        ? 'Ingresá un celular válido (ej. 11 6221-555123 o +54 9 11 6221-555123).'
-        : 'Enter a valid mobile number (e.g. 11 6221-555123).')
-      return
-    }
-    setWaSaving(true)
-    try {
-      await updateWhatsAppPhone(parsed.e164, parsed.display)
-    } catch {
-      setWaError(lang === 'es' ? 'No se pudo guardar. Intentá de nuevo.' : 'Could not save. Try again.')
-    } finally {
-      setWaSaving(false)
-    }
-  }
-
-  const waSaved = !isCoach && hasWhatsAppPhone(profile)
 
   const content = (
     <div style={{ maxWidth: 560, padding: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -169,42 +138,11 @@ export default function Settings() {
         </div>
       </div>
 
-      <form
-        onSubmit={saveWhatsApp}
-        style={{ background: W.c.card, borderRadius: 16, padding: 20, marginBottom: 16, border: `1px solid ${waSaved ? '#25D36640' : W.c.lineDim}` }}
-      >
-        <div style={{ fontSize: 12, fontFamily: W.font.mono, color: waSaved ? '#25D366' : W.c.mute, letterSpacing: 0.8, marginBottom: 8 }}>
-          {lang === 'es' ? 'TU WHATSAPP' : 'YOUR WHATSAPP'}
-        </div>
-        <p style={{ fontSize: 12, color: W.c.dim, lineHeight: 1.5, margin: '0 0 14px' }}>
-          {lang === 'es'
-            ? 'Tu coach te va a enviar avisos del box a este número. No compartimos tus chats con nadie.'
-            : 'Your coach will send gym notices to this number. We never show your chats to anyone.'}
-        </p>
-        <input
-          type="tel"
-          value={waInput}
-          onChange={e => { setWaInput(e.target.value); setWaError('') }}
-          placeholder={lang === 'es' ? '11 6221-555123' : '11 6221-555123'}
-          required
-          style={{
-            width: '100%', padding: '12px 14px', borderRadius: 10, boxSizing: 'border-box',
-            border: `1px solid ${waError ? W.c.red : W.c.lineDim}`, background: W.c.bg2,
-            color: W.c.text, fontFamily: W.font.mono, fontSize: 14, outline: 'none',
-          }}
-        />
-        {waError && (
-          <div style={{ fontSize: 11, color: W.c.red, marginTop: 8 }}>{waError}</div>
-        )}
-        {waSaved && !waError && (
-          <div style={{ fontSize: 11, color: '#25D366', marginTop: 8, fontFamily: W.font.mono }}>
-            ✓ {profile.whatsappDisplay || formatWhatsAppDisplay(profile.whatsappPhone)}
-          </div>
-        )}
-        <Btn primary sm type="submit" disabled={waSaving} style={{ marginTop: 14, width: '100%', justifyContent: 'center' }}>
-          {waSaving ? '…' : (lang === 'es' ? 'Guardar número' : 'Save number')}
-        </Btn>
-      </form>
+      <AthleteWhatsAppSettings
+        profile={profile}
+        lang={lang}
+        onSave={updateWhatsAppPhone}
+      />
 
       <div style={{ background: W.c.card, borderRadius: 16, padding: 20, marginBottom: 16 }}>
         <div style={{ fontSize: 12, fontFamily: W.font.mono, color: W.c.mute, letterSpacing: 0.8, marginBottom: 14 }}>

@@ -4,13 +4,12 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
-  signInWithRedirect,
   signOut,
   updateProfile,
 } from 'firebase/auth'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase'
-import { prefersGoogleRedirect, saveGoogleAuthIntent, readGoogleAuthIntent } from '../lib/googleAuth'
+import { saveGoogleAuthIntent, readGoogleAuthIntent, clearGoogleAuthIntent } from '../lib/googleAuth'
 import { consumeGoogleRedirectResult } from '../lib/googleRedirectHandler'
 import { fetchUserProfile } from '../lib/authProfile'
 
@@ -104,15 +103,14 @@ export function AuthProvider({ children }) {
   }
 
   async function loginGoogle(intent = {}) {
-    if (prefersGoogleRedirect()) {
-      saveGoogleAuthIntent(intent)
-      await signInWithRedirect(auth, googleProvider)
-      return { redirecting: true }
-    }
+    saveGoogleAuthIntent(intent)
     try {
       const cred = await signInWithPopup(auth, googleProvider)
-      return resolveGoogleCredential(cred)
+      const outcome = await resolveGoogleCredential(cred)
+      const savedIntent = readGoogleAuthIntent()
+      return { ...outcome, intent: savedIntent || intent }
     } catch (err) {
+      clearGoogleAuthIntent()
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         const e = new Error('POPUP_CLOSED')
         e.code = err.code
@@ -181,18 +179,16 @@ export function AuthProvider({ children }) {
     let unsubscribe = () => {}
 
     ;(async () => {
-      if (prefersGoogleRedirect()) {
-        try {
-          const cred = await consumeGoogleRedirectResult()
-          if (cred && !cancelled) {
-            setUser(cred.user)
-            const intent = readGoogleAuthIntent()
-            const outcome = await resolveGoogleCredential(cred)
-            if (!cancelled) setGoogleRedirectOutcome({ ...outcome, intent })
-          }
-        } catch (err) {
-          if (!cancelled) setGoogleRedirectError(err)
+      try {
+        const cred = await consumeGoogleRedirectResult()
+        if (cred && !cancelled) {
+          setUser(cred.user)
+          const intent = readGoogleAuthIntent()
+          const outcome = await resolveGoogleCredential(cred)
+          if (!cancelled) setGoogleRedirectOutcome({ ...outcome, intent })
         }
+      } catch (err) {
+        console.error('[auth] Google redirect pendiente:', err)
       }
       if (!cancelled) setGoogleRedirectReady(true)
 

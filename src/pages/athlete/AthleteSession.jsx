@@ -14,6 +14,7 @@ import { parseDateKey } from '../../lib/dates'
 import { initials } from '../../lib/format'
 import { saveTimerWod } from '../../lib/timerSession'
 import { resolveWodTimerMode, timerModeName, timerModePath } from '../../lib/timerModes'
+import { useAthleteSessionLogs } from '../../hooks/useAthleteSessionLogs'
 
 const pageWrap = {
   height: '100dvh',
@@ -25,18 +26,20 @@ const pageWrap = {
   overflow: 'hidden',
 }
 
-/** Área de scroll fluida en iOS (evita flex + overscroll contain). */
-const scrollPane = {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 'calc(118px + env(safe-area-inset-bottom, 0px))',
-  overflowY: 'auto',
-  overflowX: 'hidden',
-  WebkitOverflowScrolling: 'touch',
-  touchAction: 'pan-y',
-  padding: '12px 20px 24px',
+function scrollPaneStyle(hasFooter, tallFooter = false) {
+  const h = tallFooter ? 200 : 100
+  return {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: hasFooter ? `calc(${h}px + env(safe-area-inset-bottom, 0px))` : 0,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    WebkitOverflowScrolling: 'touch',
+    touchAction: 'pan-y',
+    padding: '12px 20px 24px',
+  }
 }
 
 const sessionFooter = {
@@ -89,6 +92,11 @@ export default function AthleteSession() {
 
   const sessionTimerMode = wod ? resolveWodTimerMode(wod) : null
   const sessionTimerLabel = sessionTimerMode ? timerModeName(sessionTimerMode, lang) : ''
+  const sessionDate = wod?.date
+  const { isCompleted, toggleCompleted, loading: logLoading } = useAthleteSessionLogs(
+    sessionDate ? { fromKey: sessionDate, toKey: sessionDate } : {},
+  )
+  const sessionDone = sessionDate ? isCompleted(sessionDate) : false
 
   function startTimer() {
     if (!wod || !sessionTimerMode) return
@@ -101,7 +109,7 @@ export default function AthleteSession() {
       <div style={pageWrap}>
         <PhoneFrame fill>
           <div style={shellInner}>
-            <div style={{ ...scrollPane, bottom: 0, padding: '16px 20px 24px' }}>
+            <div style={{ ...scrollPaneStyle(false), padding: '16px 20px 24px' }}>
               <button type="button" style={backBtn} onClick={() => navigate('/athlete')} aria-label={lang === 'es' ? 'Volver' : 'Back'}>
                 ‹
               </button>
@@ -125,7 +133,7 @@ export default function AthleteSession() {
     <div style={pageWrap}>
       <PhoneFrame fill>
         <div style={shellInner}>
-          <div style={scrollPane}>
+          <div style={scrollPaneStyle(true, Boolean(sessionTimerMode))}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 18 }}>
               <button type="button" style={backBtn} onClick={() => navigate(-1)} aria-label={lang === 'es' ? 'Volver' : 'Back'}>
                 ‹
@@ -160,14 +168,35 @@ export default function AthleteSession() {
           </div>
 
           <div style={sessionFooter}>
-            <Btn primary style={{ width: '100%', justifyContent: 'center', padding: '16px', fontSize: 16 }} onClick={startTimer}>
-              ▶ {lang === 'es' ? `Iniciar ${sessionTimerLabel}` : `Start ${sessionTimerLabel}`}
+            {sessionTimerMode && (
+              <>
+                <Btn primary style={{ width: '100%', justifyContent: 'center', padding: '16px', fontSize: 16 }} onClick={startTimer}>
+                  ▶ {lang === 'es' ? `Iniciar ${sessionTimerLabel}` : `Start ${sessionTimerLabel}`}
+                </Btn>
+                <p style={{ fontSize: 11, color: W.c.mute, textAlign: 'center', margin: '10px 0 12px', fontFamily: W.font.mono }}>
+                  {lang === 'es'
+                    ? `Timer del coach · ${sessionTimerLabel}`
+                    : `Coach timer · ${sessionTimerLabel}`}
+                </p>
+              </>
+            )}
+            <Btn
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                padding: '14px',
+                fontSize: 15,
+                background: sessionDone ? `${W.c.lime}22` : W.c.cardHi,
+                color: sessionDone ? W.c.lime : W.c.text,
+                border: `1px solid ${sessionDone ? W.c.lime : W.c.lineDim}`,
+              }}
+              disabled={logLoading || !sessionDate}
+              onClick={() => toggleCompleted(sessionDate, wod)}
+            >
+              {sessionDone
+                ? (lang === 'es' ? '✓ Entrenamiento completado' : '✓ Workout completed')
+                : (lang === 'es' ? 'Marcar entrenamiento completado' : 'Mark workout complete')}
             </Btn>
-            <p style={{ fontSize: 11, color: W.c.mute, textAlign: 'center', margin: '10px 0 0', fontFamily: W.font.mono }}>
-              {lang === 'es'
-                ? `Timer del coach · ${sessionTimerLabel}`
-                : `Coach timer · ${sessionTimerLabel}`}
-            </p>
           </div>
         </div>
       </PhoneFrame>

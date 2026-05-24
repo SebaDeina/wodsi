@@ -7,6 +7,7 @@ import { AthleteShell } from '../../components/AthleteShell'
 import { Tag } from '../../components/Tag'
 import { EmptyCard } from '../../components/EmptyCard'
 import { useAthleteWods } from '../../hooks/useAthleteWods'
+import { useAthleteSessionLogs } from '../../hooks/useAthleteSessionLogs'
 import { addDays, startOfWeek, getISOWeek, toDateKey, isToday } from '../../lib/dates'
 import { wodTypeLabel, wodTypeColor } from '../../lib/wodDisplay'
 import { wodSectionsFromDoc } from '../../lib/wodSections'
@@ -17,7 +18,12 @@ export default function AthleteWeek() {
   const { profile } = useAuth()
   const coachId = profile?.coachId
   const [weekStart, setWeekStart] = useState(() => startOfWeek())
+  const weekEnd = addDays(weekStart, 6)
   const { wodsByDate, weekWods, loading } = useAthleteWods(coachId, weekStart)
+  const { isCompleted } = useAthleteSessionLogs({
+    fromKey: toDateKey(weekStart),
+    toKey: toDateKey(weekEnd),
+  })
 
   const weekNum = getISOWeek(weekStart)
   const monthLabel = weekStart.toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US', { month: 'long' }).toUpperCase()
@@ -51,9 +57,10 @@ export default function AthleteWeek() {
         today: isToday(date),
         wodDoc: wod || null,
         rest: !wod,
+        done: wod ? isCompleted(key) : false,
       }
     })
-  }, [weekStart, wodsByDate, lang])
+  }, [weekStart, wodsByDate, lang, isCompleted])
 
   function shiftWeek(delta) {
     setWeekStart(prev => addDays(prev, delta * 7))
@@ -146,8 +153,17 @@ export default function AthleteWeek() {
                       </div>
                     )}
                   </div>
-                  {d.today && d.wodDoc && <span style={{ fontSize: 18, opacity: 0.6 }}>▶</span>}
-                  {!d.today && d.wodDoc && <span style={{ fontSize: 18, color: d.today ? W.c.bg : W.c.mute }}>›</span>}
+                  {d.wodDoc && d.done && (
+                    <span style={{
+                      width: 28, height: 28, borderRadius: 7,
+                      background: d.today ? W.c.bg : W.c.lime,
+                      color: d.today ? W.c.lime : W.c.bg,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 14, fontWeight: 700,
+                    }}>✓</span>
+                  )}
+                  {d.wodDoc && !d.done && d.today && <span style={{ fontSize: 18, opacity: 0.6 }}>▶</span>}
+                  {d.wodDoc && !d.done && !d.today && <span style={{ fontSize: 18, color: W.c.mute }}>›</span>}
                   {d.rest && !d.today && <Tag tone="mute" sm>REST</Tag>}
                 </div>
               ))}

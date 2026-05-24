@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc,
   query, where, serverTimestamp, writeBatch,
@@ -27,6 +27,8 @@ async function seedMissingRules(coachId, existing) {
 export function useWhatsAppAutomation() {
   const { user, profile } = useAuth()
   const coachId = user?.uid
+  const profileRef = useRef(profile)
+  useEffect(() => { profileRef.current = profile }, [profile])
 
   const [settings, setSettings] = useState(null)
   const [rules, setRules] = useState([])
@@ -43,12 +45,13 @@ export function useWhatsAppAutomation() {
       if (settingsSnap.exists()) {
         setSettings({ id: settingsSnap.id, ...settingsSnap.data() })
       } else {
+        const p = profileRef.current
         const initial = {
           connected: false,
           connectionStatus: 'disconnected',
           phone: '',
           qrDataUrl: null,
-          businessName: profile?.boxName || profile?.name || '',
+          businessName: p?.boxName || p?.name || '',
           planLabel: 'PLAN BOX',
           sessionLabel: null,
           sessionCommand: null,
@@ -85,7 +88,7 @@ export function useWhatsAppAutomation() {
     } finally {
       setLoading(false)
     }
-  }, [coachId, profile?.name, profile?.boxName])
+  }, [coachId])
 
   useEffect(() => { load() }, [load])
 

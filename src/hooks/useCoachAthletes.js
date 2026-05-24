@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
-import { membershipStatusFromDates } from '../lib/membership'
+import { membershipStatusFromAthlete } from '../lib/membership'
 
 export function useCoachAthletes() {
   const { user } = useAuth()
@@ -46,7 +46,7 @@ export function useCoachAthletes() {
 
   const counts = useMemo(() => {
     return athletes.reduce((acc, a) => {
-      const s = membershipStatusFromDates(a.paidUntil, a.status)
+      const s = membershipStatusFromAthlete(a)
       acc[s] = (acc[s] || 0) + 1
       acc.all = (acc.all || 0) + 1
       return acc

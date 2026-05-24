@@ -2,37 +2,15 @@
 
 export const TIMER_MODES = /** @type {const} */ (['amrap', 'emom', 'fortime', 'tabata'])
 
-const TYPE_TO_MODE = {
-  AMRAP: 'amrap',
-  EMOM: 'emom',
-  'For Time': 'fortime',
-  Tabata: 'tabata',
-  Chipper: 'fortime',
-  HERO: 'fortime',
-  Strength: 'fortime',
-  Other: 'amrap',
-}
-
-const SECTION_PRIORITY = ['tabata', 'emom', 'amrap', 'fortime']
-
 /**
- * Timer que debe usar el atleta en una sesión del coach.
+ * Timer para el atleta: solo si el coach lo eligió en la planificación.
  * @param {object} [wod]
- * @returns {TimerMode}
+ * @returns {TimerMode | null}
  */
 export function resolveWodTimerMode(wod) {
-  if (wod?.timerMode && TIMER_MODES.includes(wod.timerMode)) return wod.timerMode
-
-  const fromType = TYPE_TO_MODE[wod?.type]
-  if (fromType) return fromType
-
-  const sections = wod?.sections || []
-  for (const kind of SECTION_PRIORITY) {
-    if (sections.some(s => s.kind === kind)) {
-      return kind === 'fortime' ? 'fortime' : kind
-    }
-  }
-  return 'amrap'
+  const mode = wod?.timerMode
+  if (mode && TIMER_MODES.includes(mode)) return mode
+  return null
 }
 
 export function timerModePath(mode) {
@@ -55,9 +33,9 @@ export function timerModeColor(mode) {
 
 /** Opciones para el coach al publicar un WOD. */
 export function coachTimerModeOptions(lang) {
-  const auto = lang === 'es' ? 'Auto (según tipo y bloques)' : 'Auto (from type & blocks)'
+  const none = lang === 'es' ? 'Sin timer (solo planificación)' : 'No timer (programming only)'
   return [
-    { value: '', label: auto },
+    { value: '', label: none },
     { value: 'amrap', label: 'AMRAP' },
     { value: 'emom', label: 'EMOM' },
     { value: 'fortime', label: 'For Time' },

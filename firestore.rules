@@ -105,7 +105,10 @@ service cloud.firestore {
         && resource.data.role == 'athlete'
         && resource.data.coachId == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['status', 'statusNote', 'paidUntil', 'lastPaidAt']);
+          .hasOnly([
+            'status', 'statusNote', 'paidUntil', 'lastPaidAt',
+            'planDueDay', 'paidForMonth', 'membershipPlan',
+          ]);
 
       allow delete: if false;
     }
@@ -183,13 +186,15 @@ service cloud.firestore {
 
     match /whatsapp_rules/{ruleId} {
       allow read: if isCoach() && resource.data.coachId == request.auth.uid;
+      // Athlete reads their coach's rules (e.g. to preview welcome message)
+      allow read: if isAthlete() && resource.data.coachId == myProfile().coachId;
       allow create: if isCoach() && request.resource.data.coachId == request.auth.uid;
       allow update, delete: if isCoach()
         && resource.data.coachId == request.auth.uid
         && request.resource.data.coachId == request.auth.uid;
     }
 
-    // ─── whatsapp_outbox/{id} — cola de envío (solo atletas del roster) ─
+    // ─── whatsapp_outbox/{id} — cola de envío ─────────────────
 
     match /whatsapp_outbox/{outboxId} {
       allow read: if isCoach() && resource.data.coachId == request.auth.uid;
@@ -199,7 +204,53 @@ service cloud.firestore {
         && request.resource.data.whatsappPhone is string
         && request.resource.data.body is string
         && request.resource.data.status == 'pending';
+      // Athlete queues their own signup welcome message
+      allow create: if isAthlete()
+        && request.resource.data.athleteId == request.auth.uid
+        && request.resource.data.coachId == myProfile().coachId
+        && request.resource.data.source == 'signup'
+        && request.resource.data.whatsappPhone is string
+        && request.resource.data.body is string
+        && request.resource.data.status == 'pending';
       allow update, delete: if false;
+    }
+
+    // ─── athlete_session_logs/{docId} — WOD completado por día ───
+
+    match /athlete_session_logs/{docId} {
+      allow read: if isAthlete()
+        && resource.data.athleteId == request.auth.uid;
+      allow read: if isCoach()
+        && resource.data.athleteId is string
+        && get(/databases/$(database)/documents/users/$(resource.data.athleteId)).data.coachId == request.auth.uid;
+      allow create, update: if isAthlete()
+        && request.resource.data.athleteId == request.auth.uid
+        && request.resource.data.date is string
+        && request.resource.data.completed is bool;
+      allow delete: if false;
+    }
+
+    // ─── athlete_prs/{prId} — marcas personales ───────────────
+
+    match /athlete_prs/{prId} {
+      allow read: if isAthlete()
+        && resource.data.athleteId == request.auth.uid;
+      allow read: if isCoach()
+        && resource.data.coachId == request.auth.uid;
+      allow create: if isAthlete()
+        && request.resource.data.athleteId == request.auth.uid
+        && request.resource.data.coachId == myProfile().coachId
+        && request.resource.data.movement is string
+        && request.resource.data.movement.size() >= 1
+        && request.resource.data.movement.size() <= 80
+        && request.resource.data.value is number
+        && request.resource.data.value > 0
+        && request.resource.data.unit in ['kg', 'lb', 'reps', 'sec']
+        && request.resource.data.prType in ['1rm', '3rm', '5rm', 'max_reps']
+        && request.resource.data.date is string;
+      allow update, delete: if isAthlete()
+        && resource.data.athleteId == request.auth.uid
+        && request.resource.data.athleteId == request.auth.uid;
     }
 
     // ─── habit_daily/{docId} — hábitos del atleta por día ─────

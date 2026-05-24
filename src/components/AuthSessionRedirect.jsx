@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { auth } from '../firebase'
 import { parseInviteSearchParams } from '../lib/invite'
-import { peekGoogleAuthIntent, prefersGoogleRedirect } from '../lib/googleAuth'
+import { peekGoogleAuthIntent } from '../lib/googleAuth'
 import { routeAfterGoogleAuth } from '../lib/googleAuthFlow'
 
 const AUTH_PAGES = new Set(['/login', '/register'])
@@ -28,10 +28,6 @@ export function AuthSessionRedirect() {
     if (googleRedirectError) {
       console.error('[auth] Google redirect:', googleRedirectError)
       clearGoogleRedirectState()
-      if (prefersGoogleRedirect() && AUTH_PAGES.has(location.pathname)) {
-        const msg = googleRedirectError?.message || ''
-        navigate(`/login?error=google&detail=${encodeURIComponent(msg)}`, { replace: true })
-      }
       return
     }
 

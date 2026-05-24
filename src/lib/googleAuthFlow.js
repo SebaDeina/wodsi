@@ -1,4 +1,5 @@
 import { saveInviteToSession } from './invite'
+import { athleteAppPath } from './athleteRoutes'
 
 export function readNextParam(params) {
   const raw = params?.get?.('next')
@@ -59,7 +60,7 @@ export function routeAfterGoogleAuth({ needsRegistration, profile, intent }, { n
     navigate(next, { replace: true })
     return
   }
-  navigate(profile?.role === 'athlete' ? '/athlete' : '/coach', { replace: true })
+  navigate(profile?.role === 'athlete' ? athleteAppPath(profile) : '/coach', { replace: true })
 }
 
 /** Tras email/password o sesión ya activa en /login. */
@@ -70,6 +71,6 @@ export function redirectAfterLogin(profile, { navigate, params }) {
     navigate(next, { replace: true })
     return true
   }
-  navigate(profile.role === 'athlete' ? '/athlete' : '/coach', { replace: true })
+  navigate(profile.role === 'athlete' ? athleteAppPath(profile) : '/coach', { replace: true })
   return true
 }

@@ -1,64 +1,187 @@
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { collection, query, where, getDocs } from 'firebase/firestore'
+import { db } from '../../firebase'
+import { useAuth } from '../../context/AuthContext'
 import { useLang } from '../../context/LangContext'
+import { normalizeWhatsAppPhone } from '../../lib/phone'
+import { renderWhatsAppTemplate, athleteTemplateVars } from '../../lib/whatsappTemplate'
+import { queueWelcomeWhatsApp } from '../../lib/queueWelcomeWhatsApp'
 import { W } from '../../tokens'
-import { PhoneFrame } from '../../components/PhoneFrame'
 import { Btn } from '../../components/Btn'
+import { WodsiLogo } from '../../components/WodsiLogo'
 
 export default function AthleteOnboarding() {
+  const { user, profile, updateWhatsAppPhone } = useAuth()
   const { lang } = useLang()
+  const navigate = useNavigate()
+
+  const [phone, setPhone] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [welcomeRule, setWelcomeRule] = useState(null)
+
+  useEffect(() => {
+    if (profile?.whatsappPhone) {
+      navigate('/athlete', { replace: true })
+    }
+  }, [profile?.whatsappPhone, navigate])
+
+  useEffect(() => {
+    const coachId = profile?.coachId
+    if (!coachId) return
+    async function loadWelcomeRule() {
+      try {
+        const q = query(
+          collection(db, 'whatsapp_rules'),
+          where('coachId', '==', coachId),
+          where('triggerKey', '==', 'on_signup'),
+          where('active', '==', true),
+        )
+        const snap = await getDocs(q)
+        if (!snap.empty) setWelcomeRule({ id: snap.docs[0].id, ...snap.docs[0].data() })
+      } catch { /* rule not available yet */ }
+    }
+    loadWelcomeRule()
+  }, [profile?.coachId])
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    const result = normalizeWhatsAppPhone(phone)
+    if (!result.ok) {
+      setError(
+        result.error === 'EMPTY'
+          ? (lang === 'es' ? 'Ingresá tu número.' : 'Enter your phone number.')
+          : (lang === 'es' ? 'Número inválido. Ej: 11 1234-5678' : 'Invalid number. E.g. 11 1234-5678'),
+      )
+      return
+    }
+    setBusy(true)
+    try {
+      await updateWhatsAppPhone(result.e164, result.display)
+
+      if (welcomeRule && profile?.coachId) {
+        await queueWelcomeWhatsApp({
+          athleteId: user.uid,
+          coachId: profile.coachId,
+          profile,
+          phoneE164: result.e164,
+          lang,
+        })
+      }
+
+      navigate('/athlete', { replace: true })
+    } catch (err) {
+      setError(err.message)
+      setBusy(false)
+    }
+  }
+
+  const previewBody = welcomeRule
+    ? (() => {
+        try {
+          return renderWhatsAppTemplate(
+            welcomeRule.template,
+            athleteTemplateVars({ ...profile, name: profile?.name || '...' }, {}, null, lang),
+          )
+        } catch { return '' }
+      })()
+    : null
+
+  const inp = {
+    width: '100%', padding: '14px 16px', borderRadius: 10,
+    border: `1px solid ${error ? W.c.red : W.c.lineDim}`,
+    background: W.c.card, color: W.c.text,
+    fontFamily: W.font.sans, fontSize: 16,
+    outline: 'none', boxSizing: 'border-box',
+  }
+
   return (
-    <div style={{ minHeight: '100dvh', background: W.c.bg, display: 'flex', flexDirection: 'column', width: '100%' }}>
-      <PhoneFrame>
-        <div style={{ padding: '20px 20px 0', height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 32 }}>
-            {[1,2,3,4].map(i => (
-              <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= 2 ? W.c.lime : W.c.lineDim }} />
-            ))}
-          </div>
-          <div style={{ fontFamily: W.font.mono, fontSize: 11, color: W.c.lime, letterSpacing: 2, marginBottom: 16 }}>
-            STEP 2 / 4 · {lang === 'es' ? 'TU OBJETIVO' : 'YOUR GOAL'}
-          </div>
-          <h1 style={{ fontSize: 40, fontWeight: 700, letterSpacing: -1.8, lineHeight: 1.02, margin: '0 0 12px', fontFamily: W.font.display }}>
-            {lang === 'es' ? '¿Qué venís a buscar?' : 'What are you here for?'}
-          </h1>
-          <p style={{ fontSize: 14, color: W.c.dim, lineHeight: 1.5, margin: '0 0 28px' }}>
-            {lang === 'es' ? 'Tu coach va a ajustar el plan en base a esto. Podés cambiarlo después.' : 'Your coach will tailor the plan around this. You can change it later.'}
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
-            {[
-              ['🏋', lang === 'es' ? 'Más fuerza' : 'Get stronger', 'lime', true],
-              ['🔥', lang === 'es' ? 'Bajar grasa' : 'Lose fat', 'orange', false],
-              ['⏱', lang === 'es' ? 'Mejorar engine' : 'Improve engine', 'blue', false],
-              ['🥇', lang === 'es' ? 'Competir (Open / Local)' : 'Compete (Open / Local)', 'violet', false],
-            ].map(([ic, label, c, sel], i) => (
-              <div key={i} style={{
-                padding: 18, background: sel ? W.c[c] : W.c.card, color: sel ? W.c.bg : W.c.text,
-                borderRadius: 14, display: 'flex', alignItems: 'center', gap: 14,
-                boxShadow: sel ? `0 8px 24px ${W.c[c]}40` : 'none', cursor: 'pointer',
-              }}>
-                <span style={{ fontSize: 22 }}>{ic}</span>
-                <span style={{ fontSize: 15, fontWeight: 600 }}>{label}</span>
-                <span style={{ flex: 1 }} />
-                <span style={{
-                  width: 22, height: 22, borderRadius: 11,
-                  border: `2px solid ${sel ? W.c.bg : W.c.lineDim}`,
-                  background: sel ? W.c.bg : 'transparent',
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {sel && <span style={{ width: 8, height: 8, borderRadius: 4, background: W.c[c] }} />}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div style={{ paddingBottom: 32, paddingTop: 16 }}>
-            <Btn primary style={{ width: '100%', justifyContent: 'center', padding: '18px' }}>
-              {lang === 'es' ? 'Continuar' : 'Continue'} →
-            </Btn>
-            <div style={{ textAlign: 'center', marginTop: 14, fontSize: 12, color: W.c.mute, fontFamily: W.font.mono, letterSpacing: 0.4 }}>
-              {lang === 'es' ? 'PASO 2 DE 4 · OBJETIVO' : 'STEP 2 OF 4 · GOAL'}
-            </div>
-          </div>
+    <div style={{
+      minHeight: '100dvh', background: W.c.bg, color: W.c.text,
+      fontFamily: W.font.sans, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', padding: 24,
+    }}>
+      <div style={{ width: '100%', maxWidth: 400 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <WodsiLogo size={24} />
         </div>
-      </PhoneFrame>
+
+        <div style={{
+          background: W.c.bg2, borderRadius: 20, padding: 32,
+          boxShadow: `0 0 0 1px ${W.c.lineDim}`,
+        }}>
+          <div style={{
+            fontFamily: W.font.mono, fontSize: 11, color: W.c.lime,
+            letterSpacing: 1.5, marginBottom: 16,
+          }}>
+            WHATSAPP
+          </div>
+          <h1 style={{
+            fontSize: 26, fontWeight: 700, letterSpacing: -0.6,
+            margin: '0 0 8px', fontFamily: W.font.display,
+          }}>
+            {lang === 'es' ? '¿Cuál es tu número?' : 'Your phone number?'}
+          </h1>
+          <p style={{ fontSize: 14, color: W.c.dim, margin: '0 0 24px', lineHeight: 1.5 }}>
+            {lang === 'es'
+              ? 'Tu coach te va a enviar WODs y avisos por WhatsApp.'
+              : 'Your coach will send WODs and updates via WhatsApp.'}
+          </p>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <input
+              type="tel"
+              placeholder={lang === 'es' ? 'Ej: 11 1234-5678' : 'E.g. 11 1234-5678'}
+              value={phone}
+              onChange={e => { setPhone(e.target.value); setError('') }}
+              autoFocus
+              style={inp}
+            />
+            {error && (
+              <div style={{ fontSize: 13, color: W.c.red, fontFamily: W.font.mono }}>{error}</div>
+            )}
+
+            {previewBody && (
+              <div style={{
+                background: W.c.card, borderRadius: 12, padding: '12px 14px',
+                border: `1px solid ${W.c.lineDim}`,
+              }}>
+                <div style={{
+                  fontFamily: W.font.mono, fontSize: 10, color: W.c.lime,
+                  letterSpacing: 0.8, marginBottom: 8,
+                }}>
+                  {lang === 'es' ? 'MENSAJE DE BIENVENIDA' : 'WELCOME MESSAGE'}
+                </div>
+                <div style={{ fontSize: 13, color: W.c.dim, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                  {previewBody}
+                </div>
+              </div>
+            )}
+
+            <Btn
+              primary
+              style={{ width: '100%', justifyContent: 'center', padding: '14px', marginTop: 4 }}
+              disabled={busy}
+            >
+              {busy ? '…' : (lang === 'es' ? 'Guardar y continuar' : 'Save and continue')}
+            </Btn>
+          </form>
+
+          <button
+            type="button"
+            onClick={() => navigate('/athlete', { replace: true })}
+            style={{
+              width: '100%', marginTop: 12, padding: '12px',
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 13, color: W.c.mute, fontFamily: W.font.sans,
+            }}
+          >
+            {lang === 'es' ? 'Omitir por ahora' : 'Skip for now'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

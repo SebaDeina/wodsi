@@ -1,15 +1,8 @@
 const STORAGE_KEY = 'wodsi_google_auth'
 
-/** Popup en escritorio (ventana de Google). Redirect solo en móvil/tablet táctil. */
+/** Siempre popup (móvil y PC): ventana de Google y vuelve a la misma pestaña. */
 export function prefersGoogleRedirect() {
-  if (typeof window === 'undefined') return false
-  const ua = navigator.userAgent || ''
-  const mobileUa = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
-  const narrowTouch =
-    typeof window.matchMedia === 'function'
-    && window.matchMedia('(max-width: 768px)').matches
-    && navigator.maxTouchPoints > 0
-  return mobileUa || narrowTouch
+  return false
 }
 
 export function saveGoogleAuthIntent(intent) {

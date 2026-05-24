@@ -6,7 +6,15 @@ import { AthleteShell } from '../../components/AthleteShell'
 import { Btn } from '../../components/Btn'
 import { EmptyCard } from '../../components/EmptyCard'
 import { useAthleteCoach } from '../../hooks/useAthleteCoach'
-import { formatDateKey, membershipStatusFromDates } from '../../lib/membership'
+import {
+  billingMonthKey,
+  dueDateKeyForMonth,
+  formatBillingMonth,
+  formatDateKey,
+  isPaidForBillingMonth,
+  membershipStatusFromAthlete,
+  planDueDayLabel,
+} from '../../lib/membership'
 
 export default function AthleteSubscription() {
   const { lang } = useLang()
@@ -18,7 +26,11 @@ export default function AthleteSubscription() {
   const mode = coach?.athletePaymentMode || 'both'
   const showAlias = mode === 'alias' || mode === 'both'
   const showCash = mode === 'cash' || mode === 'both'
-  const passStatus = membershipStatusFromDates(profile?.paidUntil, profile?.status)
+  const passStatus = membershipStatusFromAthlete(profile || {})
+  const planDay = profile?.planDueDay
+  const month = billingMonthKey()
+  const dueKey = planDay != null ? dueDateKeyForMonth(month, planDay) : profile?.paidUntil
+  const paidMonth = isPaidForBillingMonth(profile?.paidForMonth, month)
 
   return (
     <AthleteShell lang={lang}>
@@ -54,26 +66,36 @@ export default function AthleteSubscription() {
                     ? 'Tu coach gestiona el cobro fuera de la app. Usá los datos de abajo para pagar.'
                     : 'Your coach handles payment outside the app. Use the details below.'}
                 </p>
-                {(profile?.lastPaidAt || profile?.paidUntil) && (
+                {(planDay != null || profile?.lastPaidAt || profile?.paidUntil || profile?.paidForMonth) && (
                   <div style={{
                     marginTop: 16, paddingTop: 14, borderTop: `1px solid ${W.c.lineDim}`,
                     display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 12,
                   }}>
-                    {profile?.lastPaidAt && (
+                    {planDay != null && (
                       <div>
                         <div style={{ fontFamily: W.font.mono, fontSize: 9, color: W.c.mute, letterSpacing: 0.5 }}>
-                          {lang === 'es' ? 'ÚLTIMO PAGO' : 'LAST PAYMENT'}
+                          {lang === 'es' ? 'RENOVACIÓN' : 'RENEWAL'}
                         </div>
-                        <div style={{ fontWeight: 600, marginTop: 4 }}>{formatDateKey(profile.lastPaidAt, lang)}</div>
+                        <div style={{ fontWeight: 600, marginTop: 4 }}>{planDueDayLabel(planDay, lang)}</div>
                       </div>
                     )}
-                    {profile?.paidUntil && (
-                      <div>
+                    <div>
+                      <div style={{ fontFamily: W.font.mono, fontSize: 9, color: paidMonth ? W.c.lime : W.c.mute, letterSpacing: 0.5 }}>
+                        {formatBillingMonth(month, lang).toUpperCase()}
+                      </div>
+                      <div style={{ fontWeight: 600, marginTop: 4 }}>
+                        {paidMonth
+                          ? (lang === 'es' ? 'Abonado' : 'Paid')
+                          : (lang === 'es' ? 'Pendiente' : 'Pending')}
+                      </div>
+                    </div>
+                    {dueKey && (
+                      <div style={{ gridColumn: '1 / -1' }}>
                         <div style={{ fontFamily: W.font.mono, fontSize: 9, color: passStatus === 'overdue' ? W.c.orange : W.c.lime, letterSpacing: 0.5 }}>
-                          {lang === 'es' ? 'VENCE EL' : 'VALID UNTIL'}
+                          {lang === 'es' ? 'VENCE ESTE MES' : 'DUE THIS MONTH'}
                         </div>
                         <div style={{ fontWeight: 600, marginTop: 4, color: passStatus === 'overdue' ? W.c.orange : W.c.text }}>
-                          {formatDateKey(profile.paidUntil, lang)}
+                          {formatDateKey(dueKey, lang)}
                         </div>
                       </div>
                     )}

@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext'
 import { useLang } from '../context/LangContext'
 import { parseInviteSearchParams, saveInviteToSession } from '../lib/invite'
 import { auth } from '../firebase'
-import { prefersGoogleRedirect } from '../lib/googleAuth'
 import { buildGoogleAuthIntent, redirectAfterLogin, routeAfterGoogleAuth } from '../lib/googleAuthFlow'
 import { W } from '../tokens'
 import { WodsiLogo } from '../components/WodsiLogo'
@@ -97,12 +96,11 @@ export default function Login() {
           : null,
       })
       const result = await loginGoogle(intent)
-      if (result?.redirecting) return
       routeAfterGoogleAuth(result, { navigate, params, invite })
     } catch (err) {
       setError(formatError(err))
     } finally {
-      if (!prefersGoogleRedirect()) setBusy(false)
+      setBusy(false)
     }
   }
 

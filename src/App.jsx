@@ -11,6 +11,7 @@ import Register          from './pages/Register'
 import Settings          from './pages/Settings'
 import CoachDashboard    from './pages/coach/CoachDashboard'
 import CoachAtletas      from './pages/coach/CoachAtletas'
+import CoachAthleteDetail from './pages/coach/CoachAthleteDetail'
 import CoachNuevoAtleta  from './pages/coach/CoachNuevoAtleta'
 import CoachPlanner      from './pages/coach/CoachPlanner'
 import CoachNuevoWod     from './pages/coach/CoachNuevoWod'
@@ -62,6 +63,9 @@ export default function App() {
             } />
             <Route path="/coach/athletes/new" element={
               <ProtectedRoute role="coach"><CoachNuevoAtleta /></ProtectedRoute>
+            } />
+            <Route path="/coach/athletes/:athleteId" element={
+              <ProtectedRoute role="coach"><CoachAthleteDetail /></ProtectedRoute>
             } />
             <Route path="/coach/planner" element={
               <ProtectedRoute role="coach"><CoachPlanner /></ProtectedRoute>
