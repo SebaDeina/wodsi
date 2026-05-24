@@ -189,9 +189,11 @@ service cloud.firestore {
       // Athlete reads their coach's rules (e.g. to preview welcome message)
       allow read: if isAthlete() && resource.data.coachId == myProfile().coachId;
       allow create: if isCoach() && request.resource.data.coachId == request.auth.uid;
-      allow update, delete: if isCoach()
+      allow update: if isCoach()
         && resource.data.coachId == request.auth.uid
         && request.resource.data.coachId == request.auth.uid;
+      // delete no tiene request.resource — no mezclar con update
+      allow delete: if isCoach() && resource.data.coachId == request.auth.uid;
     }
 
     // ─── whatsapp_outbox/{id} — cola de envío ─────────────────

@@ -58,5 +58,13 @@ export function useCoachAthletes() {
     [athletes],
   )
 
-  return { athletes, loading, error, counts, activeCount, reload: load }
+  function optimisticPatch(athleteId, patch) {
+    setAthletes(prev => prev.map(a => {
+      if (a.id !== athleteId) return a
+      const next = { ...a, ...patch }
+      return { ...next, status: membershipStatusFromAthlete(next) }
+    }))
+  }
+
+  return { athletes, loading, error, counts, activeCount, reload: load, optimisticPatch }
 }

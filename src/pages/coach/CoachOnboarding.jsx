@@ -48,7 +48,7 @@ function InfoRow({ title, body }) {
     <div style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: `1px solid ${W.c.lineDim}` }}>
       <span style={{ width: 8, height: 8, borderRadius: 4, background: W.c.lime, marginTop: 6, flexShrink: 0 }} />
       <div>
-        <div style={{ fontWeight: 700, fontSize: 14 }}>{title}</div>
+        <div style={{ fontWeight: 700, fontSize: 14, color: W.c.text }}>{title}</div>
         <div style={{ fontSize: 13, color: W.c.dim, lineHeight: 1.45, marginTop: 3 }}>{body}</div>
       </div>
     </div>
@@ -93,6 +93,7 @@ export default function CoachOnboarding() {
     border: `1px solid ${W.c.lineDim}`,
     borderRadius: 14,
     padding: 22,
+    color: W.c.text,
   }
 
   async function next() {
@@ -163,7 +164,7 @@ export default function CoachOnboarding() {
       }}>
         <WodsiLogo size={22} />
         <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>
+          <div style={{ fontWeight: 800, fontSize: 18, color: W.c.text }}>
             {lang === 'es' ? 'Configurá tu box' : 'Set up your gym'}
           </div>
           <div style={{ fontSize: 13, color: W.c.dim, marginTop: 2 }}>
@@ -228,7 +229,7 @@ export default function CoachOnboarding() {
         <section style={card}>
           {step === 'planes' && (
             <>
-              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>
+              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, color: W.c.text }}>
                 {lang === 'es' ? 'Datos de planes y cobro' : 'Plans and payments'}
               </div>
               <p style={{ fontSize: 14, color: W.c.dim, lineHeight: 1.5 }}>
@@ -307,7 +308,7 @@ export default function CoachOnboarding() {
 
           {step === 'whatsapp' && (
             <>
-              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>
+              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, color: W.c.text }}>
                 {lang === 'es' ? 'Conectá WhatsApp' : 'Connect WhatsApp'}
               </div>
               <p style={{ fontSize: 14, color: W.c.dim, lineHeight: 1.5 }}>
@@ -337,7 +338,7 @@ export default function CoachOnboarding() {
 
           {step === 'mensajes' && (
             <>
-              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>
+              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, color: W.c.text }}>
                 {lang === 'es' ? 'Mensajes automáticos' : 'Automatic messages'}
               </div>
               <p style={{ fontSize: 14, color: W.c.dim, lineHeight: 1.5 }}>
@@ -352,7 +353,7 @@ export default function CoachOnboarding() {
                   <div key={rule.id} style={{ padding: 14, borderRadius: 10, background: W.c.bg2, border: `1px solid ${W.c.lineDim}`, display: 'flex', gap: 12, alignItems: 'center' }}>
                     <span style={{ fontSize: 22 }}>{rule.icon || '•'}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700 }}>{rule.name}</div>
+                      <div style={{ fontWeight: 700, color: W.c.text }}>{rule.name}</div>
                       <div style={{ fontSize: 12, color: W.c.dim, marginTop: 3 }}>
                         {rule.active ? (lang === 'es' ? 'Activo' : 'On') : (lang === 'es' ? 'Apagado' : 'Off')}
                       </div>
@@ -383,7 +384,7 @@ export default function CoachOnboarding() {
 
           {step === 'atletas' && (
             <>
-              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>
+              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, color: W.c.text }}>
                 {lang === 'es' ? 'Sumá atletas' : 'Add athletes'}
               </div>
               <p style={{ fontSize: 14, color: W.c.dim, lineHeight: 1.5 }}>
@@ -412,7 +413,7 @@ export default function CoachOnboarding() {
 
           {step === 'listo' && (
             <>
-              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>
+              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, color: W.c.text }}>
                 {lang === 'es' ? 'Ya podés empezar' : 'You are ready'}
               </div>
               <p style={{ fontSize: 14, color: W.c.dim, lineHeight: 1.5 }}>
@@ -428,7 +429,7 @@ export default function CoachOnboarding() {
                   [lang === 'es' ? 'Ajustar luego' : 'Adjust later', lang === 'es' ? 'Todo queda disponible en Configuración.' : 'Everything remains available in Settings.'],
                 ].map(([title, body]) => (
                   <div key={title} style={{ background: W.c.bg2, borderRadius: 10, padding: 14 }}>
-                    <div style={{ fontWeight: 800 }}>{title}</div>
+                    <div style={{ fontWeight: 800, color: W.c.text }}>{title}</div>
                     <div style={{ fontSize: 12, color: W.c.dim, marginTop: 5, lineHeight: 1.4 }}>{body}</div>
                   </div>
                 ))}

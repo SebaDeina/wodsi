@@ -16,6 +16,7 @@ import {
   isImplementedRule,
   ruleWhenText,
   varChipLabel,
+  dedupeRulesInMemory,
 } from '../../data/whatsappDefaults'
 import { W } from '../../tokens'
 import { DesktopChrome } from '../../components/DesktopChrome'
@@ -154,7 +155,7 @@ export default function CoachWhatsApp() {
 
   const catMeta = RULE_CATEGORIES.box[lang]
   const implementedRules = useMemo(() => (
-    [...boxRules, ...athleteRules]
+    dedupeRulesInMemory([...boxRules, ...athleteRules])
       .filter(isImplementedRule)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
   ), [boxRules, athleteRules])
@@ -275,8 +276,11 @@ export default function CoachWhatsApp() {
   }
 
   const card = {
-    background: W.c.card, borderRadius: 12, padding: 20,
+    background: W.c.card,
+    borderRadius: 12,
+    padding: 20,
     border: `1px solid ${W.c.lineDim}`,
+    color: W.c.text,
   }
 
   const connectionCard = (

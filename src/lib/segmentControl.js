@@ -12,7 +12,7 @@ export function segmentButtonStyle(active) {
     : {
         border: `1px solid ${W.c.lineDim}`,
         background: W.c.card,
-        color: W.c.dim,
+        color: W.c.text,
         fontWeight: 600,
       }
 }

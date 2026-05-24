@@ -1,36 +1,78 @@
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useLang } from '../../context/LangContext'
 import { useCoachAthletes } from '../../hooks/useCoachAthletes'
 import { useCoachWods } from '../../hooks/useCoachWods'
-import { useCoachGroups } from '../../hooks/useCoachGroups'
-import { formatHeaderDate, getISOWeek, startOfWeek } from '../../lib/dates'
-import { wodBlockFromDoc } from '../../lib/wodDisplay'
+import { useIsMobile } from '../../hooks/useBreakpoint'
+import { formatHeaderDate, getISOWeek, startOfWeek, addDays, toDateKey } from '../../lib/dates'
+import { membershipStatusFromAthlete, isPaidForBillingMonth, billingMonthKey, formatBillingMonth } from '../../lib/membership'
 import { W } from '../../tokens'
 import { DesktopChrome } from '../../components/DesktopChrome'
 import { Btn } from '../../components/Btn'
-import { Tag } from '../../components/Tag'
 import { Avatar } from '../../components/Avatar'
 import { CoachHeader } from './CoachHeader'
+
+function AthletePill({ athlete, tone, onClick }) {
+  const initials = (athlete.name || athlete.email || '?').split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase()
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 0', cursor: 'pointer',
+        borderTop: `1px solid ${W.c.lineDim}`,
+      }}
+    >
+      <Avatar name={initials} size={28} tone={tone} />
+      <span style={{ fontSize: 13, color: W.c.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {athlete.name || athlete.email}
+      </span>
+      <span style={{ fontSize: 11, fontFamily: W.font.mono, color: W.c.mute }}>→</span>
+    </div>
+  )
+}
 
 export default function CoachDashboard() {
   const navigate = useNavigate()
   const { profile } = useAuth()
   const { lang } = useLang()
-  const { athletes, loading: athletesLoading, counts, activeCount } = useCoachAthletes()
-  const { todayWods, loading: wodsLoading } = useCoachWods(startOfWeek(new Date()))
-  const { groups } = useCoachGroups()
+  const isMobile = useIsMobile(1024)
+  const { athletes, loading: athletesLoading } = useCoachAthletes()
+  const { wods, todayWods, loading: wodsLoading } = useCoachWods(startOfWeek(new Date()))
 
   const today = new Date()
-  const firstName = (profile?.name || '').split(' ')[0] || (lang === 'es' ? 'Coach' : 'Coach')
+  const firstName = (profile?.name || '').split(' ')[0] || 'Coach'
   const greeting = lang === 'es' ? `Buen día, ${firstName}.` : `Good morning, ${firstName}.`
   const subtitle = `${formatHeaderDate(today, lang)} · ${lang === 'es' ? 'Semana' : 'Week'} ${getISOWeek(today)}`
+  const currentMonth = billingMonthKey()
 
-  const overdueCount = counts.overdue || 0
-  const pausedCount = counts.paused || 0
-  const primaryWod = todayWods[0]
-  const wodBlocks = todayWods.map(w => wodBlockFromDoc(w, lang, { groups, athletes }))
+  const nextWeekStart = addDays(startOfWeek(today), 7)
+  const nextWeekStartKey = toDateKey(nextWeekStart)
+  const nextWeekEndKey = toDateKey(addDays(nextWeekStart, 6))
 
+  const { athletesWithoutNextWeek, paidThisMonth, unpaid, onBilling } = useMemo(() => {
+    // Cobertura plani semana próxima
+    const nextWeekWods = wods.filter(w => w.date >= nextWeekStartKey && w.date <= nextWeekEndKey)
+    const hasBoxWod = nextWeekWods.some(w => !w.assigneeType || w.assigneeType === 'box')
+    const coveredIds = new Set()
+    if (!hasBoxWod) {
+      nextWeekWods.forEach(w => (w.audienceAthleteIds || []).forEach(id => coveredIds.add(id)))
+    }
+    const active = athletes.filter(a => (a.status || 'active') !== 'paused')
+    const athletesWithoutNextWeek = hasBoxWod ? [] : active.filter(a => !coveredIds.has(a.id))
+
+    // Cobros
+    const onBilling = athletes.filter(a => a.planDueDay != null || a.paidUntil)
+    const paidThisMonth = athletes.filter(a => {
+      if (a.planDueDay != null) return isPaidForBillingMonth(a.paidForMonth, currentMonth)
+      return (a.status || 'active') === 'active'
+    })
+    const unpaid = athletes.filter(a => membershipStatusFromAthlete(a) === 'overdue')
+    return { athletesWithoutNextWeek, paidThisMonth, unpaid, onBilling }
+  }, [athletes, wods, nextWeekStartKey, nextWeekEndKey, currentMonth])
+
+  const MAX_LIST = 6
   const loading = athletesLoading || wodsLoading
 
   return (
@@ -47,215 +89,228 @@ export default function CoachDashboard() {
           </Btn>
         </>}
       />
-      <div style={{ flex: 1, padding: 32, overflow: 'auto', display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {/* KPI row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-            {[
-              {
-                label: lang === 'es' ? 'Atletas activos' : 'Active athletes',
-                val: loading ? '…' : String(activeCount),
-                delta: `${athletes.length} ${lang === 'es' ? 'vinculados' : 'linked'}`,
-                tone: 'lime',
-              },
-              {
-                label: 'MRR',
-                val: '—',
-                delta: lang === 'es' ? 'Próximamente' : 'Coming soon',
-                tone: 'mute',
-              },
-              {
-                label: lang === 'es' ? 'Cobros vencidos' : 'Overdue',
-                val: loading ? '…' : String(overdueCount),
-                delta: pausedCount ? `${pausedCount} ${lang === 'es' ? 'pausados' : 'paused'}` : (lang === 'es' ? 'Sin pausas' : 'No pauses'),
-                tone: overdueCount ? 'orange' : 'lime',
-                negative: overdueCount > 0,
-              },
-              {
-                label: lang === 'es' ? 'WODs hoy' : "Today's WODs",
-                val: loading ? '…' : String(todayWods.length),
-                delta: lang === 'es' ? 'en el plan' : 'scheduled',
-                tone: todayWods.length ? 'lime' : 'mute',
-              },
-            ].map(k => (
-              <div key={k.label} style={{ background: W.c.card, borderRadius: 12, padding: 18 }}>
-                <div style={{ fontSize: 11, color: W.c.mute, fontFamily: W.font.mono, letterSpacing: 0.5, textTransform: 'uppercase' }}>{k.label}</div>
-                <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1.2, marginTop: 6, fontFamily: W.font.display }}>{k.val}</div>
-                <div style={{ fontSize: 12, fontFamily: W.font.mono, color: k.negative ? W.c.orange : W.c[k.tone] || W.c.mute, marginTop: 2 }}>
-                  {k.delta}
-                </div>
+
+      <div style={{ flex: 1, padding: isMobile ? '16px 16px 100px' : '24px 32px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: isMobile ? 16 : 24 }}>
+
+        {/* KPI row */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 10 : 16 }}>
+          {[
+            {
+              label: lang === 'es' ? 'Atletas' : 'Athletes',
+              val: loading ? '…' : String(athletes.length),
+              delta: lang === 'es' ? `${athletes.filter(a => (a.status || 'active') === 'active').length} activos` : `${athletes.filter(a => (a.status || 'active') === 'active').length} active`,
+              tone: 'lime',
+            },
+            {
+              label: lang === 'es' ? 'Sin plani próx. semana' : 'No plan next week',
+              val: loading ? '…' : String(athletesWithoutNextWeek.length),
+              delta: loading ? '…' : athletesWithoutNextWeek.length
+                ? (lang === 'es' ? 'atletas sin WOD' : 'athletes without WOD')
+                : (lang === 'es' ? 'Todos cubiertos' : 'All covered'),
+              tone: athletesWithoutNextWeek.length ? 'orange' : 'lime',
+              negative: athletesWithoutNextWeek.length > 0,
+            },
+            {
+              label: lang === 'es' ? 'Pagaron' : 'Paid',
+              val: loading ? '…' : String(onBilling.length ? paidThisMonth.filter(a => a.planDueDay != null).length : '—'),
+              delta: loading ? '…' : onBilling.length
+                ? formatBillingMonth(currentMonth, lang)
+                : (lang === 'es' ? 'Sin cobros configurados' : 'No billing set up'),
+              tone: 'lime',
+            },
+            {
+              label: lang === 'es' ? 'Adeudán' : 'Overdue',
+              val: loading ? '…' : String(unpaid.length),
+              delta: unpaid.length
+                ? (lang === 'es' ? 'pago pendiente' : 'payment pending')
+                : (lang === 'es' ? 'Todos al día' : 'All up to date'),
+              tone: unpaid.length ? 'orange' : 'lime',
+              negative: unpaid.length > 0,
+            },
+          ].map(k => (
+            <div key={k.label} style={{ background: W.c.card, borderRadius: 12, padding: 18 }}>
+              <div style={{ fontSize: 11, color: W.c.mute, fontFamily: W.font.mono, letterSpacing: 0.5, textTransform: 'uppercase' }}>{k.label}</div>
+              <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1.2, marginTop: 6, fontFamily: W.font.display, color: W.c.text }}>{k.val}</div>
+              <div style={{ fontSize: 12, fontFamily: W.font.mono, color: k.negative ? W.c.orange : W.c[k.tone] || W.c.mute, marginTop: 2 }}>{k.delta}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Main panels */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 16 : 20 }}>
+
+          {/* Sin plani semana próxima */}
+          <div style={{ background: W.c.card, borderRadius: 12, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+              <div style={{ fontFamily: W.font.mono, fontSize: 11, letterSpacing: 0.8, color: athletesWithoutNextWeek.length ? W.c.orange : W.c.lime }}>
+                {athletesWithoutNextWeek.length
+                  ? `⚠ ${athletesWithoutNextWeek.length} ${lang === 'es' ? 'SIN WOD PRÓX. SEMANA' : 'NO WOD NEXT WEEK'}`
+                  : `✓ ${lang === 'es' ? 'TODOS CUBIERTOS' : 'ALL COVERED'}`}
               </div>
-            ))}
+              <div style={{ flex: 1 }} />
+              <Btn ghost sm onClick={() => navigate('/coach/planner')}>
+                {lang === 'es' ? 'Planner' : 'Planner'} →
+              </Btn>
+            </div>
+            <div style={{ fontSize: 13, color: W.c.dim, marginBottom: 12, lineHeight: 1.4 }}>
+              {lang === 'es'
+                ? `Atletas activos sin WOD publicado para la semana del ${toDateKey(nextWeekStart).slice(8)} al ${nextWeekEndKey.slice(8)}.`
+                : `Active athletes with no WOD published for next week (${nextWeekStartKey.slice(5)} – ${nextWeekEndKey.slice(5)}).`}
+            </div>
+
+            {loading ? (
+              <div style={{ fontSize: 12, color: W.c.mute, fontFamily: W.font.mono }}>…</div>
+            ) : athletesWithoutNextWeek.length === 0 ? (
+              <div style={{ padding: '16px 0', textAlign: 'center', fontSize: 13, color: W.c.mute }}>
+                {wods.filter(w => w.date >= nextWeekStartKey && w.date <= nextWeekEndKey).length === 0
+                  ? (lang === 'es' ? 'No hay WODs publicados para la semana próxima.' : 'No WODs published for next week yet.')
+                  : (lang === 'es' ? 'Todos los atletas tienen WOD la semana próxima.' : 'All athletes have WODs next week.')}
+              </div>
+            ) : (
+              <>
+                {athletesWithoutNextWeek.slice(0, MAX_LIST).map(a => (
+                  <AthletePill key={a.id} athlete={a} tone="orange" onClick={() => navigate('/coach/planner')} />
+                ))}
+                {athletesWithoutNextWeek.length > MAX_LIST && (
+                  <div
+                    onClick={() => navigate('/coach/planner')}
+                    style={{ marginTop: 10, fontSize: 12, color: W.c.lime, cursor: 'pointer', fontFamily: W.font.mono }}
+                  >
+                    + {athletesWithoutNextWeek.length - MAX_LIST} {lang === 'es' ? 'más' : 'more'}
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
-          {/* Today's class */}
-          <div style={{ background: W.c.card, borderRadius: 12, padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 18 }}>
+          {/* Cobros pendientes */}
+          <div style={{ background: W.c.card, borderRadius: 12, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+              <div style={{ fontFamily: W.font.mono, fontSize: 11, letterSpacing: 0.8, color: unpaid.length ? W.c.orange : W.c.lime }}>
+                {unpaid.length
+                  ? `⚠ ${unpaid.length} ${lang === 'es' ? 'PAGO PENDIENTE' : 'PAYMENT PENDING'}`
+                  : `✓ ${lang === 'es' ? 'TODOS AL DÍA' : 'ALL UP TO DATE'}`}
+              </div>
+              <div style={{ flex: 1 }} />
+              <Btn ghost sm onClick={() => navigate('/coach/athletes')}>
+                {lang === 'es' ? 'Ver todos' : 'View all'} →
+              </Btn>
+            </div>
+            <div style={{ fontSize: 13, color: W.c.dim, marginBottom: 12, lineHeight: 1.4 }}>
+              {lang === 'es'
+                ? `Atletas que no pagaron ${formatBillingMonth(currentMonth, lang)}.`
+                : `Athletes who haven't paid for ${formatBillingMonth(currentMonth, lang)}.`}
+            </div>
+
+            {loading ? (
+              <div style={{ fontSize: 12, color: W.c.mute, fontFamily: W.font.mono }}>…</div>
+            ) : unpaid.length === 0 ? (
+              <div style={{ padding: '16px 0', textAlign: 'center', fontSize: 13, color: W.c.mute }}>
+                {onBilling.length === 0
+                  ? (lang === 'es' ? 'No hay cobros configurados aún.' : 'No billing configured yet.')
+                  : (lang === 'es' ? 'Todos los atletas están al día.' : 'All athletes are up to date.')}
+              </div>
+            ) : (
+              <>
+                {unpaid.slice(0, MAX_LIST).map(a => (
+                  <AthletePill key={a.id} athlete={a} tone="orange" onClick={() => navigate(`/coach/athletes/${a.id}`)} />
+                ))}
+                {unpaid.length > MAX_LIST && (
+                  <div
+                    onClick={() => navigate('/coach/athletes')}
+                    style={{ marginTop: 10, fontSize: 12, color: W.c.lime, cursor: 'pointer', fontFamily: W.font.mono }}
+                  >
+                    + {unpaid.length - MAX_LIST} {lang === 'es' ? 'más' : 'more'}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* WOD de hoy + Planificación */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 360px', gap: isMobile ? 16 : 20 }}>
+          <div style={{ background: W.c.card, borderRadius: 12, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
               <div>
-                <div style={{ fontFamily: W.font.mono, fontSize: 11, color: todayWods.length ? W.c.lime : W.c.mute, letterSpacing: 1 }}>
-                  {todayWods.length
-                    ? `● ${lang === 'es' ? 'HOY' : 'TODAY'}`
-                    : (lang === 'es' ? 'SIN WOD' : 'NO WOD')}
+                <div style={{ fontFamily: W.font.mono, fontSize: 11, color: todayWods.length ? W.c.lime : W.c.mute, letterSpacing: 0.8 }}>
+                  {todayWods.length ? `● ${lang === 'es' ? 'HOY' : 'TODAY'}` : (lang === 'es' ? 'SIN WOD HOY' : 'NO WOD TODAY')}
                 </div>
-                <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.6, fontFamily: W.font.display, marginTop: 4 }}>
-                  {primaryWod
-                    ? `${primaryWod.title} · ${primaryWod.type}`
+                <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: -0.5, fontFamily: W.font.display, marginTop: 4, color: W.c.text }}>
+                  {todayWods[0]
+                    ? `${todayWods[0].title} · ${todayWods[0].type}`
                     : (lang === 'es' ? 'No hay sesión publicada hoy' : 'No session published today')}
                 </div>
               </div>
               <div style={{ flex: 1 }} />
-              {!athletesLoading && (
-                <span style={{ fontFamily: W.font.mono, fontSize: 14 }}>
-                  {activeCount} {lang === 'es' ? 'atletas activos' : 'active athletes'}
-                </span>
-              )}
+              <Btn ghost sm onClick={() => navigate('/coach/planner')}>
+                {lang === 'es' ? 'Planner' : 'Planner'} →
+              </Btn>
             </div>
-
-            {wodBlocks.length === 0 ? (
+            {todayWods.length === 0 ? (
               <div style={{
-                padding: 24, background: W.c.bg2, borderRadius: 10,
+                padding: '16px 20px', background: W.c.bg2, borderRadius: 10,
                 border: `1px dashed ${W.c.lineDim}`, textAlign: 'center',
               }}>
-                <div style={{ fontSize: 13, color: W.c.dim, marginBottom: 14 }}>
+                <div style={{ fontSize: 13, color: W.c.dim, marginBottom: 12 }}>
                   {lang === 'es'
-                    ? 'Publicá el WOD de hoy para que tus atletas lo vean en la app.'
-                    : "Publish today's WOD so your athletes can see it in the app."}
+                    ? 'Publicá el WOD de hoy para que tus atletas lo vean.'
+                    : "Publish today's WOD so your athletes can see it."}
                 </div>
                 <Btn primary sm onClick={() => navigate('/coach/planner/new')}>
                   + {lang === 'es' ? 'Crear WOD' : 'Create WOD'}
                 </Btn>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: wodBlocks.length > 1 ? '1fr 1fr' : '1fr', gap: 16 }}>
-                {wodBlocks.map(b => (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {todayWods.map(w => (
                   <div
-                    key={b.id}
-                    style={{ padding: 16, background: W.c.bg2, borderRadius: 10, borderLeft: `3px solid ${W.c[b.color]}`, cursor: 'pointer' }}
+                    key={w.id}
                     onClick={() => navigate('/coach/planner')}
+                    style={{
+                      padding: '8px 14px', background: W.c.bg2, borderRadius: 8,
+                      borderLeft: `3px solid ${W.c.lime}`, cursor: 'pointer',
+                      fontSize: 13, color: W.c.text,
+                    }}
                   >
-                    <div style={{ fontSize: 11, color: W.c.mute, fontFamily: W.font.mono, letterSpacing: 0.5 }}>
-                      {b.type}{b.dur !== '—' ? ` · ${b.dur}min` : ''}
-                    </div>
-                    <div style={{ fontWeight: 600, fontSize: 15, marginTop: 6 }}>{b.name}</div>
-                    {b.preview && (
-                      <div style={{ fontSize: 12, color: W.c.dim, marginTop: 4, whiteSpace: 'pre-line', lineHeight: 1.4 }}>
-                        {b.preview}
-                        {b.sectionCount > 3 ? '…' : ''}
-                      </div>
-                    )}
+                    {w.title || w.type}
                   </div>
                 ))}
               </div>
             )}
-
-            <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 6 }}>
-              {athletes.slice(0, 8).map((a, i) => {
-                const initials = (a.name || a.email || '?').split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase()
-                return <Avatar key={a.id} name={initials} size={28} />
-              })}
-              {athletes.length > 8 && (
-                <span style={{
-                  width: 28, height: 28, borderRadius: 14, background: W.c.lineDim, color: W.c.dim,
-                  fontFamily: W.font.mono, fontSize: 11, fontWeight: 600,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                }}>+{athletes.length - 8}</span>
-              )}
-              {athletes.length === 0 && !athletesLoading && (
-                <span style={{ fontSize: 12, color: W.c.mute }}>
-                  {lang === 'es' ? 'Todavía no tenés atletas vinculados' : 'No linked athletes yet'}
-                </span>
-              )}
-              <div style={{ flex: 1 }} />
-              <Btn ghost sm onClick={() => navigate('/coach/athletes')}>
-                {lang === 'es' ? 'Ver atletas' : 'See athletes'} →
-              </Btn>
-            </div>
           </div>
 
-          {/* Week planner teaser */}
-          <div style={{ background: W.c.card, borderRadius: 12, padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 18 }}>
-              <div style={{ fontSize: 16, fontWeight: 600 }}>{lang === 'es' ? 'Planificación' : 'Programming'}</div>
-              <span style={{ marginLeft: 12, fontFamily: W.font.mono, fontSize: 11, color: W.c.mute }}>
-                {lang === 'es' ? 'SEMANA ACTUAL' : 'CURRENT WEEK'}
-              </span>
-              <div style={{ flex: 1 }} />
-              <Btn ghost sm onClick={() => navigate('/coach/planner')}>
-                {lang === 'es' ? 'Abrir planner' : 'Open planner'} →
-              </Btn>
-            </div>
-            <p style={{ fontSize: 13, color: W.c.dim, margin: 0, lineHeight: 1.5 }}>
-              {lang === 'es'
-                ? 'Organizá la semana, duplicá bloques y publicá sesiones desde el calendario.'
-                : 'Organize your week, duplicate blocks, and publish sessions from the calendar.'}
-            </p>
-          </div>
-        </div>
-
-        {/* Right column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Acciones rápidas */}
           <div style={{ background: W.c.card, borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 11, color: W.c.mute, fontFamily: W.font.mono, letterSpacing: 0.5 }}>{lang === 'es' ? 'RESUMEN' : 'SUMMARY'}</div>
-            <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: -1.2, fontFamily: W.font.display, marginTop: 4 }}>
-              {loading ? '…' : athletes.length}
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14, color: W.c.text }}>
+              {lang === 'es' ? 'Acciones rápidas' : 'Quick actions'}
             </div>
-            <div style={{ fontSize: 12, color: W.c.dim, marginTop: 4 }}>
-              {lang === 'es' ? 'atletas en tu roster' : 'athletes on your roster'}
-            </div>
-            <div style={{ height: 1, background: W.c.lineDim, margin: '14px 0' }} />
-            <div style={{ fontFamily: W.font.mono, fontSize: 11, color: W.c.mute, display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: W.c.lime }}>{activeCount} {lang === 'es' ? 'ACTIVOS' : 'ACTIVE'}</span>
-              <span style={{ color: W.c.orange }}>{overdueCount} {lang === 'es' ? 'VENCIDOS' : 'OVERDUE'}</span>
-            </div>
-          </div>
-
-          <div style={{ background: W.c.card, borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>{lang === 'es' ? 'Acciones rápidas' : 'Quick actions'}</div>
             {[
-              [lang === 'es' ? 'Publicar WOD' : 'Publish WOD', false, 'lime', '/coach/planner/new'],
-              [lang === 'es' ? 'Invitar atleta (link)' : 'Invite athlete (link)', false, 'lime', '/coach/athletes/new'],
-              [lang === 'es' ? 'Ver planificación' : 'View programming', false, 'orange', '/coach/planner'],
-              [lang === 'es' ? 'Reglas WhatsApp' : 'WhatsApp rules', false, 'orange', '/coach/whatsapp'],
-              [lang === 'es' ? 'Gestionar atletas' : 'Manage athletes', false, 'orange', '/coach/athletes'],
-            ].map(([txt, done, c, path], i) => (
+              [lang === 'es' ? 'Publicar WOD' : 'Publish WOD', '/coach/planner/new'],
+              [lang === 'es' ? 'Invitar atleta' : 'Invite athlete', '/coach/athletes/new'],
+              [lang === 'es' ? 'Ver planificación' : 'View programming', '/coach/planner'],
+              [lang === 'es' ? 'Gestionar atletas' : 'Manage athletes', '/coach/athletes'],
+              [lang === 'es' ? 'WhatsApp y cobros' : 'WhatsApp & billing', '/coach/whatsapp'],
+            ].map(([txt, path], i) => (
               <div
                 key={i}
-                role="button"
-                tabIndex={0}
                 onClick={() => navigate(path)}
-                onKeyDown={e => e.key === 'Enter' && navigate(path)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0',
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0',
                   borderTop: i ? `1px solid ${W.c.lineDim}` : 'none', cursor: 'pointer',
                 }}
               >
                 <span style={{
-                  width: 16, height: 16, borderRadius: 4,
-                  border: `1.5px solid ${W.c[c]}`,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 6, height: 6, borderRadius: 3,
+                  background: W.c.lime, flexShrink: 0,
                 }} />
                 <span style={{ fontSize: 13, color: W.c.text, flex: 1 }}>{txt}</span>
-                <span style={{ color: W.c.mute }}>→</span>
+                <span style={{ color: W.c.mute, fontSize: 12 }}>→</span>
               </div>
             ))}
           </div>
-
-          <div style={{ background: W.c.card, borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center' }}>
-              WhatsApp
-              <span style={{ flex: 1 }} />
-              <Tag tone="lime" sm>{lang === 'es' ? 'REGLAS' : 'RULES'}</Tag>
-            </div>
-            <p style={{ fontSize: 13, color: W.c.dim, margin: '0 0 14px', lineHeight: 1.5 }}>
-              {lang === 'es'
-                ? 'Automatizá cobros, bienvenidas e inactividad desde tu número.'
-                : 'Automate billing, welcome and inactivity from your number.'}
-            </p>
-            <Btn ghost sm onClick={() => navigate('/coach/whatsapp')}>
-              {lang === 'es' ? 'Configurar reglas' : 'Configure rules'} →
-            </Btn>
-          </div>
         </div>
+
       </div>
     </DesktopChrome>
   )

@@ -1,15 +1,40 @@
 *, *::before, *::after { box-sizing: border-box; }
 
-html, body {
+html {
+  color-scheme: dark;
+}
+
+html, body, #root {
   margin: 0;
   padding: 0;
   background: oklch(0.135 0.012 250);
+  color: oklch(0.98 0.005 100);
   font-family: 'Space Grotesk', 'Helvetica Neue', Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 #root { min-height: 100vh; min-height: 100dvh; }
+
+/* Form controls no heredan color por defecto → texto negro sobre fondo oscuro */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+select option {
+  background-color: oklch(0.22 0.012 250);
+  color: oklch(0.98 0.005 100);
+}
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  color-scheme: dark;
+}
 
 * { scrollbar-width: thin; scrollbar-color: oklch(0.32 0.012 250) transparent; }
 *::-webkit-scrollbar { width: 6px; height: 6px; }

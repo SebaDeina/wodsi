@@ -163,7 +163,7 @@ export default function CoachGroups() {
               border: `1px dashed ${W.c.lineDim}`,
               borderRadius: 14,
             }}>
-              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, color: W.c.text }}>
                 {lang === 'es' ? 'Todavía no tenés grupos' : 'No groups yet'}
               </div>
               <p style={{ fontSize: 13, color: W.c.dim, maxWidth: 400, margin: '0 auto 20px', lineHeight: 1.5 }}>
@@ -187,7 +187,7 @@ export default function CoachGroups() {
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 16 }}>{g.name}</div>
+                      <div style={{ fontWeight: 700, fontSize: 16, color: W.c.text }}>{g.name}</div>
                       {g.goal && (
                         <div style={{ fontSize: 13, color: W.c.dim, marginTop: 6, lineHeight: 1.4 }}>{g.goal}</div>
                       )}
@@ -217,7 +217,7 @@ export default function CoachGroups() {
             flexShrink: 0,
             background: W.c.bg2,
           }}>
-            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16, color: W.c.text }}>
               {editingId === 'new'
                 ? (lang === 'es' ? 'Nuevo grupo' : 'New group')
                 : (lang === 'es' ? 'Editar grupo' : 'Edit group')}

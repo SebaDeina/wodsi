@@ -9,11 +9,8 @@ import { useIsMobile } from '../hooks/useBreakpoint'
 const NAV_ITEMS = [
   { k: 'dashboard',    icon: '◧', path: '/coach' },
   { k: 'planning',     icon: '◫', path: '/coach/planner' },
-  { k: 'groups_nav',   icon: '◉', path: '/coach/groups' },
   { k: 'athletes_nav', icon: '◐', path: '/coach/athletes' },
   { k: 'whatsapp',     icon: '◰', path: '/coach/whatsapp' },
-  { k: 'billing',      icon: '◱', path: '/coach/billing' },
-  { k: 'library',      icon: '◇', path: '/coach/library' },
   { k: 'settings',     icon: '◎', path: '/settings' },
 ]
 
@@ -22,8 +19,8 @@ const MOBILE_TABS = [
   { k: 'dashboard',    icon: '◧', path: '/coach' },
   { k: 'planning',     icon: '◫', path: '/coach/planner' },
   { k: 'athletes_nav', icon: '◐', path: '/coach/athletes' },
-  { k: 'groups_nav',   icon: '◉', path: '/coach/groups' },
   { k: 'whatsapp',     icon: '◰', path: '/coach/whatsapp' },
+  { k: 'settings',     icon: '◎', path: '/settings' },
 ]
 
 const SIDEBAR_W = 232

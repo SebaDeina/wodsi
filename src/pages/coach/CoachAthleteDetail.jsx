@@ -6,6 +6,7 @@ import { useCoachAthletes } from '../../hooks/useCoachAthletes'
 import { useCoachGroups } from '../../hooks/useCoachGroups'
 import { useCoachBilling } from '../../hooks/useCoachBilling'
 import { useLang } from '../../context/LangContext'
+import { useIsMobile } from '../../hooks/useBreakpoint'
 import { t } from '../../i18n'
 import { hasWhatsAppPhone } from '../../lib/phone'
 import {
@@ -35,6 +36,7 @@ const card = {
   padding: 20,
   border: `1px solid ${W.c.lineDim}`,
   marginBottom: 14,
+  color: W.c.text,
 }
 
 const label = {
@@ -64,7 +66,8 @@ export default function CoachAthleteDetail() {
   const { athleteId } = useParams()
   const { lang } = useLang()
   const navigate = useNavigate()
-  const { athletes, loading, reload } = useCoachAthletes()
+  const isMobile = useIsMobile(1024)
+  const { athletes, loading, reload, optimisticPatch } = useCoachAthletes()
   const { groupsForAthlete } = useCoachGroups()
   const { billing } = useCoachBilling()
   const [saving, setSaving] = useState(false)
@@ -84,13 +87,15 @@ export default function CoachAthleteDetail() {
   const athleteGroups = athlete ? groupsForAthlete(athlete.id) : []
   const initials = (athlete?.name || athlete?.email || '?').split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase()
 
-  async function patch(patch) {
+  async function patch(patchData) {
     if (!athlete) return
     setSaving(true)
+    const next = { ...athlete, ...patchData }
+    const statusNext = membershipStatusFromAthlete(next)
+    optimisticPatch(athlete.id, patchData)
     try {
-      const next = { ...athlete, ...patch }
-      const statusNext = membershipStatusFromAthlete(next)
-      await updateDoc(doc(db, 'users', athlete.id), { ...patch, status: statusNext })
+      await updateDoc(doc(db, 'users', athlete.id), { ...patchData, status: statusNext })
+    } catch {
       await reload()
     } finally {
       setSaving(false)
@@ -144,7 +149,7 @@ export default function CoachAthleteDetail() {
         )}
       />
 
-      <div style={{ flex: 1, overflow: 'auto', padding: '8px 32px 40px', maxWidth: 720 }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: isMobile ? '12px 16px 100px' : '8px 32px 40px', maxWidth: 720 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
           <Avatar name={initials} size={56} tone="lime" />
           <div style={{ flex: 1 }}>
@@ -172,7 +177,7 @@ export default function CoachAthleteDetail() {
               : 'Set the day the plan renews each month. Then mark whether they paid for the current month.'}
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 16 }}>
             <div>
               <span style={{ ...label, marginBottom: 6 }}>{lang === 'es' ? 'DÍA DE VENCIMIENTO' : 'DUE DAY'}</span>
               <input

@@ -4,6 +4,7 @@ import { db } from '../../firebase'
 import { useAuth } from '../../context/AuthContext'
 import { useCoachAthletes } from '../../hooks/useCoachAthletes'
 import { useLang } from '../../context/LangContext'
+import { useIsMobile } from '../../hooks/useBreakpoint'
 import {
   buildAthleteInviteUrl,
   buildWhatsAppShareText,
@@ -21,6 +22,7 @@ const WA = '#25D366'
 export default function CoachNuevoAtleta() {
   const { user, profile, syncCoachPublic } = useAuth()
   const { lang } = useLang()
+  const isMobile = useIsMobile(1024)
   const { athletes: fetched, loading } = useCoachAthletes()
   const [hiddenIds, setHiddenIds] = useState([])
   const athletes = fetched.filter(a => !hiddenIds.includes(a.id))
@@ -46,19 +48,19 @@ export default function CoachNuevoAtleta() {
     }
   }
 
-  async function copyInviteLink() {
-    await ensurePublicProfile()
-    await navigator.clipboard.writeText(inviteUrl)
+  function copyInviteLink() {
+    navigator.clipboard.writeText(inviteUrl)
     setCopiedLink(true)
     setTimeout(() => setCopiedLink(false), 2500)
+    ensurePublicProfile()
   }
 
-  async function copyWhatsAppMessage() {
-    await ensurePublicProfile()
+  function copyWhatsAppMessage() {
     const text = buildWhatsAppShareText(inviteUrl, coachName, lang)
-    await navigator.clipboard.writeText(text)
+    navigator.clipboard.writeText(text)
     setCopiedWa(true)
     setTimeout(() => setCopiedWa(false), 2500)
+    ensurePublicProfile()
   }
 
   function openWhatsApp() {
@@ -90,10 +92,10 @@ export default function CoachNuevoAtleta() {
           : 'Share a link — they sign in with Google and join your roster'}
       />
 
-      <div style={{ maxWidth: 820, padding: '32px 32px 64px', display: 'flex', flexDirection: 'column', gap: 28 }}>
+      <div style={{ maxWidth: 820, padding: isMobile ? '20px 16px 100px' : '32px 32px 64px', display: 'flex', flexDirection: 'column', gap: isMobile ? 20 : 28 }}>
 
         {/* Paso a paso */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 12 }}>
           {[
             [lang === 'es' ? '1. Copiá el link' : '1. Copy the link', lang === 'es' ? 'Un solo link por atleta' : 'One link for all athletes'],
             [lang === 'es' ? '2. Mandalo por WhatsApp' : '2. Send on WhatsApp', lang === 'es' ? 'Mensaje listo para pegar' : 'Pre-written message'],
@@ -107,7 +109,7 @@ export default function CoachNuevoAtleta() {
         </div>
 
         {/* Invitación principal */}
-        <div style={{ background: W.c.card, borderRadius: 16, padding: 28, display: 'grid', gridTemplateColumns: '1fr auto', gap: 28, alignItems: 'start' }}>
+        <div style={{ background: W.c.card, borderRadius: 16, padding: isMobile ? 20 : 28, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto', gap: isMobile ? 20 : 28, alignItems: 'start' }}>
           <div>
             <div style={{ fontSize: 12, fontFamily: W.font.mono, color: W.c.lime, letterSpacing: 0.8, marginBottom: 10 }}>
               {lang === 'es' ? 'LINK DE INVITACIÓN' : 'INVITE LINK'}

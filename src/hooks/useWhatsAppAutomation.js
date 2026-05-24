@@ -5,11 +5,55 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
-import { DEFAULT_WHATSAPP_RULES } from '../data/whatsappDefaults'
+import {
+  DEFAULT_WHATSAPP_RULES,
+  pickCanonicalRule,
+  ruleIdentityKey,
+} from '../data/whatsappDefaults'
+
+/** Borra reglas duplicadas (mismo disparador, distinto slug/id). */
+async function dedupeCoachRules(existing) {
+  const groups = new Map()
+  for (const rule of existing) {
+    const key = ruleIdentityKey(rule)
+    const list = groups.get(key) || []
+    list.push(rule)
+    groups.set(key, list)
+  }
+
+  const keep = []
+  const deleteIds = []
+  for (const group of groups.values()) {
+    if (group.length === 1) {
+      keep.push(group[0])
+      continue
+    }
+    const winner = pickCanonicalRule(group)
+    keep.push(winner)
+    for (const rule of group) {
+      if (rule.id !== winner.id) deleteIds.push(rule.id)
+    }
+  }
+
+  if (deleteIds.length) {
+    try {
+      const batch = writeBatch(db)
+      for (const id of deleteIds) {
+        batch.delete(doc(db, 'whatsapp_rules', id))
+      }
+      await batch.commit()
+    } catch (err) {
+      // Si falla el borrado (p. ej. reglas Firestore sin deploy), igual mostramos lista sin duplicados
+      console.warn('[whatsapp] no se pudieron borrar reglas duplicadas', err)
+    }
+  }
+
+  return keep.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+}
 
 async function seedMissingRules(coachId, existing) {
-  const slugs = new Set(existing.map(r => r.slug))
-  const missing = DEFAULT_WHATSAPP_RULES.filter(r => !slugs.has(r.slug))
+  const existingKeys = new Set(existing.map(ruleIdentityKey))
+  const missing = DEFAULT_WHATSAPP_RULES.filter(r => !existingKeys.has(ruleIdentityKey(r)))
   if (!missing.length) return existing
 
   const batch = writeBatch(db)
@@ -80,6 +124,7 @@ export function useWhatsAppAutomation() {
       } else {
         loaded = rulesSnap.docs
           .map(d => ({ id: d.id, ...d.data(), category: d.data().category || 'box' }))
+        loaded = await dedupeCoachRules(loaded)
         loaded = await seedMissingRules(coachId, loaded)
       }
       setRules(loaded)

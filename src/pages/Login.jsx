@@ -22,6 +22,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [coachConflict, setCoachConflict] = useState(null)
 
   useEffect(() => {
     if (invite.isAthleteInvite) {
@@ -39,10 +40,11 @@ export default function Login() {
   // Auto-redirect cuando ya hay sesión activa — cubre el redirect flow de Google
   // que vuelve a /login sin haber navegado aún
   useEffect(() => {
-    if (!authLoading && user && profile?.role) {
+    if (!authLoading && user && profile?.role && !coachConflict) {
+      if (invite.isAthleteInvite && invite.coachId && profile.coachId && profile.coachId !== invite.coachId) return
       redirectAfterLogin(profile, { navigate, params })
     }
-  }, [authLoading, user, profile, navigate, params])
+  }, [authLoading, user, profile, navigate, params, coachConflict, invite.isAthleteInvite, invite.coachId])
 
   function registerLink() {
     if (invite.isAthleteInvite) {
@@ -68,6 +70,14 @@ export default function Login() {
       : 'We could not sign you in. Check your details and try again.'
   }
 
+  function detectCoachConflict(profile) {
+    if (!invite.isAthleteInvite || !invite.coachId) return false
+    if (!profile?.coachId) return false
+    if (profile.coachId === invite.coachId) return false
+    setCoachConflict({ currentCoachId: profile.coachId, newCoachName: invite.coachName, profile })
+    return true
+  }
+
   async function handleEmail(e) {
     e.preventDefault()
     setError('')
@@ -78,6 +88,7 @@ export default function Login() {
         navigate('/register', { replace: true })
         return
       }
+      if (detectCoachConflict(result.profile)) return
       redirectAfterLogin(result.profile, { navigate, params })
     } catch (err) {
       setError(formatError(err))
@@ -98,6 +109,8 @@ export default function Login() {
           : null,
       })
       const result = await loginGoogle(intent)
+      if (result?.redirecting) return
+      if (detectCoachConflict(result?.profile)) return
       routeAfterGoogleAuth(result, { navigate, params, invite })
     } catch (err) {
       setError(formatError(err))
@@ -113,11 +126,45 @@ export default function Login() {
   }
 
   const sessionUser = user || auth.currentUser
-  if (authLoading || sessionUser) {
+  if (authLoading || (sessionUser && !coachConflict)) {
     return (
       <div style={{ minHeight: '100vh', background: W.c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ fontFamily: W.font.mono, fontSize: 12, color: W.c.mute }}>
           {lang === 'es' ? 'Ingresando…' : 'Signing in…'}
+        </div>
+      </div>
+    )
+  }
+
+  if (coachConflict) {
+    return (
+      <div style={{ minHeight: '100vh', background: W.c.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ width: '100%', maxWidth: 400 }}>
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <WodsiLogo size={24} />
+          </div>
+          <div style={{ background: W.c.bg2, borderRadius: 20, padding: 32, boxShadow: `0 0 0 1px ${W.c.lineDim}` }}>
+            <div style={{ fontFamily: W.font.mono, fontSize: 11, color: W.c.orange, letterSpacing: 1.2, marginBottom: 16 }}>
+              ⚠ {lang === 'es' ? 'YA TENÉS UN COACH' : 'ALREADY LINKED'}
+            </div>
+            <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, margin: '0 0 12px', fontFamily: W.font.display, color: W.c.text }}>
+              {lang === 'es' ? 'Tu cuenta ya está vinculada' : 'Your account is already linked'}
+            </h1>
+            <p style={{ fontSize: 14, color: W.c.dim, margin: '0 0 20px', lineHeight: 1.55 }}>
+              {lang === 'es'
+                ? `Estás registrado con otro coach. Este link de invitación corresponde a ${coachConflict.newCoachName ? `"${coachConflict.newCoachName}"` : 'otro box'}.`
+                : `You are registered with another coach. This invite link is for ${coachConflict.newCoachName ? `"${coachConflict.newCoachName}"` : 'a different gym'}.`}
+            </p>
+            <div style={{ background: W.c.card, borderRadius: 12, padding: 16, marginBottom: 20, fontSize: 13, color: W.c.dim, lineHeight: 1.5 }}>
+              {lang === 'es'
+                ? 'Si querés cambiarte a este box, pedile al nuevo coach que primero coordine con tu coach actual.'
+                : 'To switch to this gym, ask your new coach to coordinate with your current coach first.'}
+            </div>
+            <Btn primary style={{ width: '100%', justifyContent: 'center', padding: '14px' }}
+              onClick={() => redirectAfterLogin(coachConflict.profile, { navigate, params: new URLSearchParams() })}>
+              {lang === 'es' ? 'Ir a mi cuenta actual →' : 'Go to my current account →'}
+            </Btn>
+          </div>
         </div>
       </div>
     )

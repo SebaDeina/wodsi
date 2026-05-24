@@ -18,9 +18,6 @@ import CoachPlanner      from './pages/coach/CoachPlanner'
 import CoachNuevoWod     from './pages/coach/CoachNuevoWod'
 import CoachWhatsApp     from './pages/coach/CoachWhatsApp'
 import JoinRedirect      from './pages/JoinRedirect'
-import CoachBilling      from './pages/coach/CoachBilling'
-import CoachLibrary      from './pages/coach/CoachLibrary'
-import CoachGroups       from './pages/coach/CoachGroups'
 import AthleteHome       from './pages/athlete/AthleteHome'
 import AthleteWeek       from './pages/athlete/AthleteWeek'
 import AthleteHistory    from './pages/athlete/AthleteHistory'
@@ -77,19 +74,13 @@ export default function App() {
             <Route path="/coach/planner/new" element={
               <ProtectedRoute role="coach"><CoachNuevoWod /></ProtectedRoute>
             } />
-            <Route path="/coach/groups" element={
-              <ProtectedRoute role="coach"><CoachGroups /></ProtectedRoute>
-            } />
+            <Route path="/coach/groups"  element={<Navigate to="/coach/planner" replace />} />
+            <Route path="/coach/billing" element={<Navigate to="/coach/athletes?tab=billing" replace />} />
+            <Route path="/coach/library" element={<Navigate to="/coach/planner?tab=library" replace />} />
             <Route path="/coach/whatsapp" element={
               <ProtectedRoute role="coach"><CoachWhatsApp /></ProtectedRoute>
             } />
             <Route path="/coach/messages" element={<Navigate to="/coach/whatsapp" replace />} />
-            <Route path="/coach/billing" element={
-              <ProtectedRoute role="coach"><CoachBilling /></ProtectedRoute>
-            } />
-            <Route path="/coach/library" element={
-              <ProtectedRoute role="coach"><CoachLibrary /></ProtectedRoute>
-            } />
 
             {/* Athlete routes */}
             <Route path="/athlete" element={

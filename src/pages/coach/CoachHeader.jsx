@@ -10,7 +10,7 @@ export function CoachHeader({ title, subtitle, right }) {
         padding: '14px 16px', borderBottom: `1px solid ${W.c.lineDim}`,
         flexShrink: 0,
       }}>
-        <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: -0.4, fontFamily: W.font.display }}>
+        <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: -0.4, fontFamily: W.font.display, color: W.c.text }}>
           {title}
         </div>
         {subtitle && (
@@ -33,7 +33,7 @@ export function CoachHeader({ title, subtitle, right }) {
       display: 'flex', alignItems: 'center', gap: 24, flexShrink: 0,
     }}>
       <div>
-        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.6, fontFamily: W.font.display }}>
+        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.6, fontFamily: W.font.display, color: W.c.text }}>
           {title}
         </div>
         {subtitle && (

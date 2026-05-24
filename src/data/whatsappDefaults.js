@@ -100,6 +100,57 @@ export const FUTURE_WHATSAPP_RULES = [
 
 export const DEFAULT_WHATSAPP_RULES = [...BOX_WHATSAPP_RULES]
 
+/** Clave única por disparador (evita duplicados si cambió el slug entre versiones). */
+export function ruleIdentityKey(rule) {
+  const cat = rule?.category || 'box'
+  const key = rule?.triggerKey
+  if (!key) return `${cat}:slug:${rule?.slug || rule?.id || 'unknown'}`
+  const days = rule?.triggerDays ?? ''
+  return `${cat}:${key}:${days}`
+}
+
+export function findDefaultRuleFor(rule) {
+  if (!rule?.triggerKey) return null
+  return DEFAULT_WHATSAPP_RULES.find(
+    d => d.triggerKey === rule.triggerKey
+      && (d.category || 'box') === (rule.category || 'box')
+      && (d.triggerDays ?? null) === (rule.triggerDays ?? null),
+  ) ?? null
+}
+
+function ruleScore(rule, defaultDef) {
+  let score = 0
+  if (defaultDef && rule.slug === defaultDef.slug) score += 1000
+  if (rule.active) score += 100
+  const ts = rule.updatedAt?.toMillis?.() ?? rule.createdAt?.toMillis?.() ?? 0
+  score += ts / 1e15
+  return score
+}
+
+/** Elige la regla a conservar cuando hay varias con el mismo disparador. */
+export function pickCanonicalRule(duplicates) {
+  if (!duplicates?.length) return null
+  if (duplicates.length === 1) return duplicates[0]
+  const defaultDef = findDefaultRuleFor(duplicates[0])
+  return [...duplicates].sort((a, b) => ruleScore(b, defaultDef) - ruleScore(a, defaultDef))[0]
+}
+
+/** Lista sin duplicados (misma lógica que la limpieza en Firestore). */
+export function dedupeRulesInMemory(rules) {
+  const groups = new Map()
+  for (const rule of rules) {
+    const key = ruleIdentityKey(rule)
+    const list = groups.get(key) || []
+    list.push(rule)
+    groups.set(key, list)
+  }
+  const merged = []
+  for (const group of groups.values()) {
+    merged.push(pickCanonicalRule(group))
+  }
+  return merged.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+}
+
 export const RULE_CATEGORIES = {
   box: {
     es: { title: 'Mensajes automáticos', desc: 'Elegí qué avisos querés mandar y editá el texto.' },
