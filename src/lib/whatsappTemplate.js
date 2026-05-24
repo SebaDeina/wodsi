@@ -4,6 +4,7 @@ import { formatDateKey } from './membership'
 
 const FALLBACKS = {
   nombre: 'atleta',
+  semana: 'esta semana',
   monto: '—',
   alias: '—',
   vencimiento: '—',

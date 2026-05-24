@@ -57,3 +57,13 @@ export function isSameDay(a, b) {
 export function isToday(date) {
   return isSameDay(date, new Date())
 }
+
+/** Rango legible de la semana que empieza en weekStartKey (lunes). */
+export function formatWeekRangeFromStartKey(weekStartKey, lang = 'es') {
+  const start = parseDateKey(weekStartKey)
+  const end = addDays(start, 6)
+  if (lang === 'es') {
+    return `${start.getDate()}–${end.getDate()} ${end.toLocaleDateString('es-AR', { month: 'long' })}`
+  }
+  return `${start.toLocaleDateString('en-US', { month: 'short' })} ${start.getDate()}–${end.getDate()}`
+}

@@ -196,6 +196,16 @@ service cloud.firestore {
 
     // ─── whatsapp_outbox/{id} — cola de envío ─────────────────
 
+    match /planning_week_notified/{logId} {
+      allow read: if isCoach() && resource.data.coachId == request.auth.uid;
+      allow create: if isCoach()
+        && request.resource.data.coachId == request.auth.uid
+        && request.resource.data.athleteId is string
+        && request.resource.data.weekStart is string
+        && !exists(/databases/$(database)/documents/planning_week_notified/$(logId));
+      allow update, delete: if false;
+    }
+
     match /whatsapp_outbox/{outboxId} {
       allow read: if isCoach() && resource.data.coachId == request.auth.uid;
       allow create: if isCoach()
@@ -203,7 +213,15 @@ service cloud.firestore {
         && request.resource.data.athleteId is string
         && request.resource.data.whatsappPhone is string
         && request.resource.data.body is string
-        && request.resource.data.status == 'pending';
+        && request.resource.data.status == 'pending'
+        && (
+          !('source' in request.resource.data)
+          || request.resource.data.source in ['manual', 'planning']
+        )
+        && (
+          !('sendAfter' in request.resource.data)
+          || request.resource.data.sendAfter is timestamp
+        );
       // Athlete queues their own signup welcome message
       allow create: if isAthlete()
         && request.resource.data.athleteId == request.auth.uid

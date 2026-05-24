@@ -22,6 +22,7 @@ import { DesktopChrome } from '../../components/DesktopChrome'
 import { CoachHeader } from './CoachHeader'
 import { Btn } from '../../components/Btn'
 import { coachTimerModeOptions } from '../../lib/timerModes'
+import { queuePlanningPublishedWhatsApp } from '../../lib/queuePlanningPublishedWhatsApp'
 
 const WOD_TYPES = ['Mixed', 'Strength', 'AMRAP', 'EMOM', 'For Time', 'Tabata', 'Chipper', 'HERO', 'Other']
 
@@ -158,6 +159,15 @@ export default function CoachNuevoWod() {
           createdAt: serverTimestamp(),
         })
       }
+
+      void queuePlanningPublishedWhatsApp({
+        coachId: user.uid,
+        wodDateKey: date,
+        audienceAthleteIds: payload.audienceAthleteIds,
+        athletes,
+        lang,
+      })
+
       navigate('/coach/planner')
     } catch {
       setError(lang === 'es'

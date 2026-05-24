@@ -41,9 +41,21 @@ async function markFailed(db, docSnap, coachId, message) {
   if (coachId) await bumpStats(db, coachId, 'failed')
 }
 
+function sendAfterMs(data) {
+  const raw = data.sendAfter
+  if (!raw) return 0
+  if (typeof raw.toMillis === 'function') return raw.toMillis()
+  if (raw instanceof Date) return raw.getTime()
+  if (typeof raw === 'number') return raw
+  return 0
+}
+
 async function processOutboxItemInner(db, docSnap) {
   const data = docSnap.data()
   if (data.status !== 'pending') return false
+
+  const notBefore = sendAfterMs(data)
+  if (notBefore > Date.now()) return false
 
   const coachId = data.coachId
   const attempts = data.attempts || 0

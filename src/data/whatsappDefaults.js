@@ -5,6 +5,7 @@
 
 export const IMPLEMENTED_TRIGGER_KEYS = new Set([
   'on_signup',
+  'week_planning_published',
   'plan_due_day',
   'overdue_days',
   'overdue_pause',
@@ -28,6 +29,19 @@ export const BOX_WHATSAPP_RULES = [
   },
   {
     category: 'box',
+    slug: 'week_planning',
+    name: 'Planificación lista',
+    icon: '📋',
+    triggerKey: 'week_planning_published',
+    triggerLabel: 'Al publicar la semana',
+    sendTime: null,
+    template:
+      'Hola {{nombre}}, ya podés ver la planificación de la semana ({{semana}}) en la app. ¡Nos vemos en el box!',
+    active: true,
+    order: 1,
+  },
+  {
+    category: 'box',
     slug: 'due_today',
     name: 'Recordatorio de cuota',
     icon: '💳',
@@ -37,7 +51,7 @@ export const BOX_WHATSAPP_RULES = [
     template:
       'Hola {{nombre}}, hoy corresponde la cuota ({{monto}}). Vence el {{vencimiento}}. Transferí al alias {{alias}}. ¡Gracias!',
     active: true,
-    order: 1,
+    order: 2,
   },
   {
     category: 'box',
@@ -51,7 +65,7 @@ export const BOX_WHATSAPP_RULES = [
     template:
       'Hola {{nombre}}, vi que la cuota sigue pendiente. ¿Necesitás ayuda para regularizar? Escribime cuando puedas.',
     active: false,
-    order: 2,
+    order: 3,
   },
   {
     category: 'box',
@@ -65,7 +79,7 @@ export const BOX_WHATSAPP_RULES = [
     template:
       'Hola {{nombre}}, hace unos días que no te vemos en el box. ¿Todo bien?',
     active: false,
-    order: 3,
+    order: 4,
   },
 ]
 
@@ -95,6 +109,7 @@ export const RULE_CATEGORIES = {
 
 export const SIMPLE_TEMPLATE_VARS = [
   { key: 'nombre', es: 'Nombre', en: 'Name' },
+  { key: 'semana', es: 'Semana', en: 'Week' },
   { key: 'monto', es: 'Monto', en: 'Amount' },
   { key: 'alias', es: 'Alias', en: 'Alias' },
 ]
@@ -113,6 +128,10 @@ export function ruleWhenText(rule, lang = 'es') {
     on_signup: {
       es: 'Cuando un atleta nuevo se da de alta en tu roster',
       en: 'When a new athlete joins your roster',
+    },
+    week_planning_published: {
+      es: 'Cuando guardás un WOD de la semana (una vez por atleta; entre 9:00 y 20:00 hs)',
+      en: 'When you save a WOD for the week (once per athlete; between 9 AM and 8 PM)',
     },
     plan_due_day: {
       es: `Todos los días a las ${time} (atletas con plan al día)`,
