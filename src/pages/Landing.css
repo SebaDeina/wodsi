@@ -1,6 +1,19 @@
 .landing {
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
+  padding-top: var(--landing-nav-height, 60px);
+}
+
+.landing-nav-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: color-mix(in oklch, oklch(0.135 0.012 250) 93%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--w-line-dim, oklch(0.28 0.012 250));
 }
 
 .landing-nav {

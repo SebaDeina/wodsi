@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
       } catch (err) {
         if (!cancelled) setGoogleRedirectError(err)
       } finally {
-        if (!cancelled) setGoogleRedirectReady(true)
+        setGoogleRedirectReady(true)
       }
     })()
     return () => { cancelled = true }
@@ -105,8 +105,13 @@ export function AuthProvider({ children }) {
   async function loginEmail(email, password) {
     const cred = await signInWithEmailAndPassword(auth, email, password)
     const snap = await getDoc(doc(db, 'users', cred.user.uid))
-    setProfile(snap.exists() ? snap.data() : null)
-    return { user: cred.user, profile: snap.data() }
+    const data = snap.exists() ? snap.data() : null
+    setProfile(data)
+    return {
+      user: cred.user,
+      profile: data,
+      needsRegistration: !snap.exists(),
+    }
   }
 
   async function registerEmail(email, password, name, role, coachId = null) {

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { LangProvider } from './context/LangContext'
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { AuthSessionRedirect } from './components/AuthSessionRedirect'
 import { ErrorBoundary } from './components/ErrorBoundary'
 
 import Landing           from './pages/Landing'
@@ -40,6 +41,7 @@ export default function App() {
           <BrowserRouter
             future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
           >
+          <AuthSessionRedirect />
           <Routes>
             <Route path="/"        element={<Landing />} />
             <Route path="/demo"    element={<Navigate to="/register?role=coach" replace />} />

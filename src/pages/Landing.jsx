@@ -29,11 +29,7 @@ export default function Landing() {
   return (
     <div className="landing" style={shell}>
 
-      <nav style={{
-        borderBottom: `1px solid ${W.c.lineDim}`,
-        position: 'sticky', top: 0, zIndex: 100,
-        background: `${W.c.bg}ee`, backdropFilter: 'blur(12px)',
-      }}>
+      <header className="landing-nav-wrap" style={{ '--w-line-dim': W.c.lineDim }}>
         <div className="landing-nav">
           <WodsiLogo size={22} />
           <div className="landing-nav-links" style={{ color: W.c.dim }}>
@@ -66,7 +62,7 @@ export default function Landing() {
             {t('nav_demo', lang)} →
           </Btn>
         </div>
-      </nav>
+      </header>
 
       <section className="landing-section landing-hero" style={{ position: 'relative', overflow: 'hidden' }}>
         <div style={{

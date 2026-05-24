@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useLang } from '../context/LangContext'
 import { parseInviteSearchParams, saveInviteToSession } from '../lib/invite'
 import { prefersGoogleRedirect } from '../lib/googleAuth'
-import { buildGoogleAuthIntent, routeAfterGoogleAuth } from '../lib/googleAuthFlow'
+import { buildGoogleAuthIntent, redirectAfterLogin, routeAfterGoogleAuth } from '../lib/googleAuthFlow'
 import { W } from '../tokens'
 import { WodsiLogo } from '../components/WodsiLogo'
 import { Btn } from '../components/Btn'
@@ -12,11 +12,7 @@ import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import { AuthDivider } from '../components/AuthDivider'
 
 export default function Login() {
-  const {
-    loginEmail, loginGoogle,
-    googleRedirectOutcome, googleRedirectError, googleRedirectReady,
-    clearGoogleRedirectState,
-  } = useAuth()
+  const { loginEmail, loginGoogle, loading: authLoading, user, profile } = useAuth()
   const { lang, setLang } = useLang()
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -34,22 +30,11 @@ export default function Login() {
   }, [invite.coachId, invite.coachName, invite.isAthleteInvite])
 
   useEffect(() => {
-    if (!googleRedirectReady) return
-    if (googleRedirectError) {
-      setError(formatError(googleRedirectError))
-      clearGoogleRedirectState()
-      setBusy(false)
-      return
+    const err = params.get('error')
+    if (err === 'google') {
+      setError(lang === 'es' ? 'No se pudo completar el inicio con Google.' : 'Could not complete Google sign-in.')
     }
-    if (!googleRedirectOutcome) return
-    setBusy(true)
-    routeAfterGoogleAuth(googleRedirectOutcome, { navigate, params, invite })
-    clearGoogleRedirectState()
-    setBusy(false)
-  }, [
-    googleRedirectReady, googleRedirectOutcome, googleRedirectError,
-    navigate, params, invite, clearGoogleRedirectState,
-  ])
+  }, [params, lang])
 
   function registerLink() {
     if (invite.isAthleteInvite) {
@@ -73,22 +58,17 @@ export default function Login() {
     return err.message
   }
 
-  function afterAuthRedirect(profile) {
-    const next = params.get('next')
-    if (next && next.startsWith('/') && !next.startsWith('//')) {
-      navigate(next, { replace: true })
-      return
-    }
-    navigate(profile?.role === 'athlete' ? '/athlete' : '/coach', { replace: true })
-  }
-
   async function handleEmail(e) {
     e.preventDefault()
     setError('')
     setBusy(true)
     try {
-      const { profile } = await loginEmail(email, password)
-      afterAuthRedirect(profile)
+      const result = await loginEmail(email, password)
+      if (result.needsRegistration) {
+        navigate('/register', { replace: true })
+        return
+      }
+      redirectAfterLogin(result.profile, { navigate, params })
     } catch (err) {
       setError(formatError(err))
     } finally {
@@ -121,6 +101,14 @@ export default function Login() {
     width: '100%', padding: '14px 16px', borderRadius: 10, border: `1px solid ${W.c.lineDim}`,
     background: W.c.card, color: W.c.text, fontFamily: W.font.sans, fontSize: 15,
     outline: 'none', boxSizing: 'border-box',
+  }
+
+  if (authLoading || (user && profile?.role)) {
+    return (
+      <div style={{ minHeight: '100vh', background: W.c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontFamily: W.font.mono, fontSize: 12, color: W.c.mute }}>…</div>
+      </div>
+    )
   }
 
   return (

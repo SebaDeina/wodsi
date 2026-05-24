@@ -1,5 +1,17 @@
 import { saveInviteToSession } from './invite'
 
+export function readNextParam(params) {
+  const raw = params?.get?.('next')
+  if (!raw) return null
+  try {
+    const path = decodeURIComponent(raw)
+    if (path.startsWith('/') && !path.startsWith('//')) return path
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
 export function buildGoogleAuthIntent({
   mode = 'login',
   next = null,
@@ -42,10 +54,22 @@ export function routeAfterGoogleAuth({ needsRegistration, profile, intent }, { n
     return
   }
 
-  const next = intent?.next || params?.get?.('next')
-  if (next && next.startsWith('/') && !next.startsWith('//')) {
+  const next = readNextParam(params) || intent?.next
+  if (next) {
     navigate(next, { replace: true })
     return
   }
   navigate(profile?.role === 'athlete' ? '/athlete' : '/coach', { replace: true })
+}
+
+/** Tras email/password o sesión ya activa en /login. */
+export function redirectAfterLogin(profile, { navigate, params }) {
+  if (!profile?.role) return false
+  const next = readNextParam(params)
+  if (next) {
+    navigate(next, { replace: true })
+    return true
+  }
+  navigate(profile.role === 'athlete' ? '/athlete' : '/coach', { replace: true })
+  return true
 }
