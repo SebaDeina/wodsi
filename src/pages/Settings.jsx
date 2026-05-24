@@ -131,7 +131,7 @@ export default function Settings() {
     <DesktopChrome lang={lang}>
       <CoachHeader
         title={lang === 'es' ? 'Configuración' : 'Settings'}
-        subtitle={lang === 'es' ? 'Perfil, cobros y cuenta' : 'Profile, billing and account'}
+        subtitle={lang === 'es' ? 'Perfil, cobros a atletas y cuenta' : 'Profile, athlete billing and account'}
       />
 
       <div style={{
@@ -237,6 +237,11 @@ export default function Settings() {
               <div style={{ background: W.c.card, borderRadius: 14, border: `1px solid ${W.c.lineDim}`, overflow: 'hidden' }}>
                 {[
                   {
+                    label: lang === 'es' ? 'Plan Wodsi' : 'Wodsi plan',
+                    sub: lang === 'es' ? 'Suscripción y pagos' : 'Subscription and payments',
+                    path: '/coach/planes',
+                  },
+                  {
                     label: lang === 'es' ? 'Invitar atletas' : 'Invite athletes',
                     sub: lang === 'es' ? 'Link y QR para tu box' : 'Link and QR for your gym',
                     path: '/coach/athletes/new',
@@ -299,7 +304,7 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* ── Right column — Cobros ────────────────────── */}
+          {/* ── Right column — Cobros atletas ─ */}
           <div>
             {isMobile && <div style={divider} />}
             <div style={sectionLabel}>{lang === 'es' ? 'COBROS A ATLETAS' : 'ATHLETE BILLING'}</div>

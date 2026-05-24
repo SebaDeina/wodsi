@@ -1,0 +1,41 @@
+# PC / servidor 24/7 — worker WhatsApp + API de cobros Mercado Pago
+# La app web puede seguir en Firebase App Hosting (recomendado).
+#
+# Uso:
+#   cp .env.docker.example .env.docker
+#   # Editá .env.docker (token MP, ruta al JSON de Firebase)
+#   docker compose up -d --build
+#   docker compose logs -f
+
+services:
+  billing-api:
+    build: ./services/billing-api
+    container_name: wodsi-billing-api
+    restart: unless-stopped
+    ports:
+      - "${BILLING_PORT:-8788}:8788"
+    env_file:
+      - .env.docker
+    environment:
+      PORT: 8788
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase.json
+    volumes:
+      - ${FIREBASE_CREDENTIALS_PATH}:/run/secrets/firebase.json:ro
+
+  whatsapp-worker:
+    build: ./services/whatsapp-worker
+    container_name: wodsi-whatsapp-worker
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase.json
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium
+      TZ: America/Argentina/Buenos_Aires
+    volumes:
+      - ${FIREBASE_CREDENTIALS_PATH}:/run/secrets/firebase.json:ro
+      - wwebjs_auth:/app/.wwebjs_auth
+    shm_size: "1gb"
+
+volumes:
+  wwebjs_auth:

@@ -11,16 +11,16 @@ const NAV_ITEMS = [
   { k: 'planning',     icon: '◫', path: '/coach/planner' },
   { k: 'athletes_nav', icon: '◐', path: '/coach/athletes' },
   { k: 'whatsapp',     icon: '◰', path: '/coach/whatsapp' },
+  { k: 'planes',       icon: '◈', path: '/coach/planes' },
   { k: 'settings',     icon: '◎', path: '/settings' },
 ]
 
-// 5 tabs más usados en mobile
 const MOBILE_TABS = [
   { k: 'dashboard',    icon: '◧', path: '/coach' },
   { k: 'planning',     icon: '◫', path: '/coach/planner' },
   { k: 'athletes_nav', icon: '◐', path: '/coach/athletes' },
   { k: 'whatsapp',     icon: '◰', path: '/coach/whatsapp' },
-  { k: 'settings',     icon: '◎', path: '/settings' },
+  { k: 'planes',       icon: '◈', path: '/coach/planes' },
 ]
 
 const SIDEBAR_W = 232

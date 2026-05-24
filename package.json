@@ -15,7 +15,14 @@
     "deploy:hosting": "npm run build && firebase deploy --only hosting,firestore:rules",
     "whatsapp:install": "npm install --prefix services/whatsapp-worker",
     "whatsapp:dev": "npm run dev --prefix services/whatsapp-worker",
-    "whatsapp:start": "npm run start --prefix services/whatsapp-worker"
+    "whatsapp:start": "npm run start --prefix services/whatsapp-worker",
+    "billing:install": "npm install --prefix services/billing-api",
+    "billing:dev": "npm run dev --prefix services/billing-api",
+    "billing:start": "npm run start --prefix services/billing-api",
+    "billing:create-plans": "node services/billing-api/scripts/create-mp-plans.mjs",
+    "docker:up": "docker compose up -d --build",
+    "docker:logs": "docker compose logs -f",
+    "docker:down": "docker compose down"
   },
   "dependencies": {
     "firebase": "^12.13.0",

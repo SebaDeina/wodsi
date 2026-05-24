@@ -12,6 +12,7 @@ import { DesktopChrome } from '../../components/DesktopChrome'
 import { Btn } from '../../components/Btn'
 import { Avatar } from '../../components/Avatar'
 import { CoachHeader } from './CoachHeader'
+import { useCoachSubscription } from '../../hooks/useCoachSubscription'
 
 function AthletePill({ athlete, tone, onClick }) {
   const initials = (athlete.name || athlete.email || '?').split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase()
@@ -40,6 +41,7 @@ export default function CoachDashboard() {
   const isMobile = useIsMobile(1024)
   const { athletes, loading: athletesLoading } = useCoachAthletes()
   const { wods, todayWods, loading: wodsLoading } = useCoachWods(startOfWeek(new Date()))
+  const { isActive: subscriptionActive, billingConfigured, loading: subLoading } = useCoachSubscription()
 
   const today = new Date()
   const firstName = (profile?.name || '').split(' ')[0] || 'Coach'
@@ -77,6 +79,24 @@ export default function CoachDashboard() {
 
   return (
     <DesktopChrome lang={lang}>
+      {!subLoading && billingConfigured && !subscriptionActive && (
+        <div style={{
+          margin: isMobile ? '0 16px 12px' : '0 32px 16px',
+          padding: '14px 18px', borderRadius: 12,
+          background: W.c.limeSoft, border: `1px solid ${W.c.lime}50`,
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12,
+        }}>
+          <p style={{ margin: 0, flex: 1, fontSize: 14, color: W.c.text, lineHeight: 1.45 }}>
+            {lang === 'es'
+              ? 'Activá tu suscripción mensual a Wodsi para seguir usando el panel (Mercado Pago).'
+              : 'Activate your monthly Wodsi subscription to keep using the coach panel (Mercado Pago).'}
+          </p>
+          <Btn primary sm onClick={() => navigate('/coach/planes')}>
+            {lang === 'es' ? 'Ver planes' : 'View plans'} →
+          </Btn>
+        </div>
+      )}
+
       <CoachHeader
         title={greeting}
         subtitle={subtitle}

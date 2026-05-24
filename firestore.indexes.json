@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "coach_subscription_payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "coachId", "order": "ASCENDING" },
+        { "fieldPath": "paidAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "coach_subscriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "payerEmail", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

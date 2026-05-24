@@ -10,7 +10,9 @@ services/whatsapp-worker/node_modules
 services/whatsapp-worker/.wwebjs_auth
 services/whatsapp-worker/*-firebase-adminsdk-*.json
 services/whatsapp-worker/serviceAccount.json
-services/whatsapp-worker/.env
+services/billing-api/.env
+services/billing-api/mp-plans.generated.json
+.env.docker
 
 .firebase
 firebase-debug.log

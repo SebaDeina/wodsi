@@ -43,6 +43,7 @@ export const DICT = {
   groups_nav:   { es: 'Grupos', en: 'Groups' },
   messages:     { es: 'Mensajes', en: 'Messages' },
   whatsapp:     { es: 'WhatsApp', en: 'WhatsApp' },
+  planes:       { es: 'Planes', en: 'Plans' },
   billing:      { es: 'Cobros', en: 'Billing' },
   library:      { es: 'Biblioteca', en: 'Library' },
   settings:     { es: 'Ajustes', en: 'Settings' },

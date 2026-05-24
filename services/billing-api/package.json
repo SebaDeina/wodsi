@@ -1,0 +1,13 @@
+{
+  "name": "wodsi-billing-api",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch --watch-kill-signal=SIGTERM src/index.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.2"
+  }
+}

@@ -168,6 +168,18 @@ service cloud.firestore {
         && resource.data.coachId == request.auth.uid;
     }
 
+    // ─── coach_subscriptions/{coachId} — plan Wodsi (Mercado Pago) ─
+
+    match /coach_subscriptions/{coachId} {
+      allow read: if isCoach() && request.auth.uid == coachId;
+      allow write: if false;
+    }
+
+    match /coach_subscription_payments/{paymentId} {
+      allow read: if isCoach() && resource.data.coachId == request.auth.uid;
+      allow write: if false;
+    }
+
     // ─── whatsapp_settings/{coachId} ───────────────────────────
 
     match /whatsapp_settings/{coachId} {

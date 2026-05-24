@@ -12,6 +12,12 @@ export default defineConfig({
   envPrefix: ['VITE_', 'EXPO_PUBLIC_'],
   server: {
     headers: authPopupHeaders,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8788',
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     headers: authPopupHeaders,

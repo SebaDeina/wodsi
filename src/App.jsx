@@ -17,6 +17,7 @@ import CoachNuevoAtleta  from './pages/coach/CoachNuevoAtleta'
 import CoachPlanner      from './pages/coach/CoachPlanner'
 import CoachNuevoWod     from './pages/coach/CoachNuevoWod'
 import CoachWhatsApp     from './pages/coach/CoachWhatsApp'
+import CoachPlanes       from './pages/coach/CoachPlanes'
 import JoinRedirect      from './pages/JoinRedirect'
 import AthleteHome       from './pages/athlete/AthleteHome'
 import AthleteWeek       from './pages/athlete/AthleteWeek'
@@ -79,6 +80,9 @@ export default function App() {
             <Route path="/coach/library" element={<Navigate to="/coach/planner?tab=library" replace />} />
             <Route path="/coach/whatsapp" element={
               <ProtectedRoute role="coach"><CoachWhatsApp /></ProtectedRoute>
+            } />
+            <Route path="/coach/planes" element={
+              <ProtectedRoute role="coach"><CoachPlanes /></ProtectedRoute>
             } />
             <Route path="/coach/messages" element={<Navigate to="/coach/whatsapp" replace />} />
 

@@ -173,6 +173,7 @@ export default function Landing() {
                     background: rest ? 'transparent' : W.c.card,
                     border: rest ? `1px dashed ${W.c.lineDim}` : 'none',
                     borderRadius: 10, padding: 10, minHeight: 96, position: 'relative', overflow: 'hidden',
+                    gridColumn: rest ? '1 / -1' : undefined,
                   }}
                 >
                   <div style={{ fontFamily: W.font.mono, fontSize: 9, color: W.c.mute, letterSpacing: 0.8 }}>{d}</div>
@@ -247,7 +248,7 @@ export default function Landing() {
           {[
             { name: 'plan_starter', price: '12.000', limit: '20', desc: lang === 'es' ? 'Coach solo' : 'Solo coach' },
             { name: 'plan_box', price: '28.000', limit: '80', desc: lang === 'es' ? 'Box mediano' : 'Mid-size box', featured: true },
-            { name: 'plan_chain', price: '—', limit: '∞', desc: lang === 'es' ? 'Cadena / Custom' : 'Chain / Custom' },
+            { name: 'plan_chain', price: null, limit: '∞', desc: lang === 'es' ? 'Cadena / Personalizado' : 'Chain / Custom' },
           ].map((p, i) => (
             <PricingCard key={p.name} p={p} lang={lang} onCta={goSignupCoach} revealDelay={i * 90} />
           ))}
@@ -449,9 +450,16 @@ function PricingCard({ p, lang, onCta, revealDelay = 0 }) {
       )}
       <div style={{ fontFamily: W.font.mono, fontSize: 11, letterSpacing: 1, opacity: 0.8 }}>{t(p.name, lang).toUpperCase()}</div>
       <div style={{ fontSize: 'clamp(48px, 12vw, 72px)', fontWeight: 700, letterSpacing: -2, marginTop: 12, fontFamily: W.font.display, lineHeight: 1 }}>
-        {p.price === '—' ? p.price : <>${p.price}</>}
+        {p.price !== null
+          ? <>${p.price}</>
+          : <span style={{ fontSize: 'clamp(22px, 5vw, 30px)', letterSpacing: -0.5 }}>
+              {lang === 'es' ? 'A consultar' : 'On request'}
+            </span>
+        }
       </div>
-      <div style={{ fontSize: 11, opacity: 0.7, fontFamily: W.font.mono, marginTop: 4 }}>ARS {t('per_month', lang).toUpperCase()}</div>
+      {p.price !== null && (
+        <div style={{ fontSize: 11, opacity: 0.7, fontFamily: W.font.mono, marginTop: 4 }}>ARS {t('per_month', lang).toUpperCase()}</div>
+      )}
       <div style={{ fontSize: 13, marginTop: 16, opacity: 0.85 }}>
         {p.desc} · {lang === 'es' ? 'hasta' : 'up to'} <strong>{p.limit}</strong> {t('athletes', lang)}
       </div>
