@@ -1,475 +1,549 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
-import { t } from '../i18n'
-import { W } from '../tokens'
-import { WodsiLogo } from '../components/WodsiLogo'
-import { Btn } from '../components/Btn'
-import { Tag } from '../components/Tag'
-import { Avatar } from '../components/Avatar'
-import { ImgSlot } from '../components/ImgSlot'
-import { Reveal } from '../components/landing/Reveal'
-import { TimerPreviewMini } from '../components/landing/TimerPreviewMini'
-import { HeroShowcaseVisual } from '../components/landing/HeroShowcaseVisual'
 import './Landing.css'
 
-const LANDING_TIMER_PILLS = [
-  { id: 'amrap', label: 'AMRAP' },
-  { id: 'emom', label: 'EMOM' },
-  { id: 'fortime', label: 'For Time' },
-  { id: 'tabata', label: 'Tabata' },
+const NAV_ITEMS = [
+  { id: 'producto', es: 'Producto', en: 'Product' },
+  { id: 'ejemplos', es: 'Ejemplos', en: 'Examples' },
+  { id: 'beneficios', es: 'Beneficios', en: 'Benefits' },
+  { id: 'planes', es: 'Planes', en: 'Plans' },
 ]
+
+const BENEFITS = [
+  {
+    es: 'Planificación semanal',
+    en: 'Weekly programming',
+    copyEs: 'Cargá la semana una vez y publicala para todo el box, grupos o atletas puntuales.',
+    copyEn: 'Load the week once and publish it to the whole gym, groups, or individual athletes.',
+  },
+  {
+    es: 'Atletas ordenados',
+    en: 'Organized athletes',
+    copyEs: 'Cada atleta entra, ve su día, su historial y los relojes que necesita para entrenar.',
+    copyEn: 'Each athlete logs in, sees the day, their history, and the timers they need to train.',
+  },
+  {
+    es: 'WhatsApp sin copiar y pegar',
+    en: 'WhatsApp without copy-paste',
+    copyEs: 'Avisos de bienvenida, cuotas y programación desde un flujo pensado para el coach.',
+    copyEn: 'Welcome, payment, and programming notices from a flow designed for the coach.',
+  },
+]
+
+const WEEK = [
+  ['Lun', 'Fuerza', 'Back squat + accesorios'],
+  ['Mar', 'Engine', 'Row / C2B / burpees'],
+  ['Mié', 'Oly', 'Power snatch + overhead'],
+  ['Jue', 'Lower', 'Lunges + cossack squat'],
+  ['Vie', 'Metcon', 'Ski / run / sled push'],
+]
+
+const ATHLETES = [
+  ['Seba', 'Grupo RX', 'Al día'],
+  ['Mica', 'Competencia', 'Vence 28/05'],
+  ['Tomi', 'Principiantes', 'Sin WhatsApp'],
+]
+
+const AUTOMATIONS = [
+  ['Bienvenida', 'Cuando entra un atleta nuevo', 'ACTIVA'],
+  ['Cuota', 'Recordatorio 3 días antes', 'ACTIVA'],
+  ['Planificación', 'Aviso cuando publicás la semana', 'LISTA'],
+  ['Seguimiento', 'Si no completó entrenos', 'PAUSADA'],
+]
+
+function copy(lang, es, en) {
+  return lang === 'es' ? es : en
+}
+
+function Brand() {
+  return (
+    <div className="landing-brand" aria-label="Wodsi">
+      <span className="landing-brand-mark">W</span>
+      <span>wodsi</span>
+    </div>
+  )
+}
+
+function WeekBoard({ lang }) {
+  return (
+    <div className="landing-week-board" aria-label={copy(lang, 'Vista semanal', 'Weekly view')}>
+      <div className="landing-week-head">
+        <span>{copy(lang, 'Semana del box', 'Gym week')}</span>
+        <span>{copy(lang, 'Publicado', 'Published')}</span>
+      </div>
+      <div className="landing-week-list">
+        {WEEK.map(([day, type, work]) => (
+          <div className="landing-week-row" key={day}>
+            <div className="landing-week-day">{day}</div>
+            <div>
+              <strong>{type}</strong>
+              <p>{work}</p>
+            </div>
+            <span className="landing-week-dot" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PhonePreview({ lang }) {
+  return (
+    <div className="landing-phone" aria-label={copy(lang, 'Vista atleta', 'Athlete view')}>
+      <div className="landing-phone-bar" />
+      <div className="landing-phone-kicker">{copy(lang, 'Hoy', 'Today')}</div>
+      <h3>{copy(lang, 'Día 3', 'Day 3')}</h3>
+      <div className="landing-phone-block">
+        <span>3 vueltas</span>
+        <p>400 mts run<br />12 power snatch<br />9 overhead<br />6 burpees</p>
+      </div>
+      <button type="button">AMRAP · EMOM · TABATA</button>
+    </div>
+  )
+}
+
+function AthleteWorkoutPreview({ lang }) {
+  return (
+    <div className="landing-athlete-app-preview" aria-label={copy(lang, 'App del atleta', 'Athlete app')}>
+      <div className="landing-athlete-app-top">
+        <div>
+          <span>{copy(lang, 'Miércoles · Día 3', 'Wednesday · Day 3')}</span>
+          <h3>{copy(lang, 'Trabajo del día', "Today's session")}</h3>
+        </div>
+        <strong>RX</strong>
+      </div>
+
+      <div className="landing-athlete-workout-block">
+        <div className="landing-athlete-block-head">
+          <span>01</span>
+          <div>
+            <em>{copy(lang, 'Vueltas', 'Rounds')}</em>
+            <strong>4 rounds</strong>
+          </div>
+        </div>
+        {['30" hollow rocks', '30" hollow holds', '30" crunches', '30" rest'].map(item => (
+          <p key={item}>{item}</p>
+        ))}
+      </div>
+
+      <div className="landing-athlete-workout-block">
+        <div className="landing-athlete-block-head">
+          <span>02</span>
+          <div>
+            <em>For Time</em>
+            <strong>10-8-6-4-2</strong>
+          </div>
+        </div>
+        {['Hang power clean', 'BMU', '30 doble unders por vuelta'].map(item => (
+          <p key={item}>{item}</p>
+        ))}
+      </div>
+
+      <button type="button" className="landing-athlete-start">
+        {copy(lang, 'Empezar sesión', 'Start session')}
+      </button>
+    </div>
+  )
+}
+
+function AthletePanelPreview({ lang }) {
+  return (
+    <div className="landing-athletes-preview">
+      <div className="landing-preview-topline">
+        <span>{copy(lang, 'Atletas', 'Athletes')}</span>
+        <strong>38</strong>
+      </div>
+      <div className="landing-athlete-stats">
+        <div><strong>31</strong><span>{copy(lang, 'activos', 'active')}</span></div>
+        <div><strong>7</strong><span>{copy(lang, 'pendientes', 'pending')}</span></div>
+        <div><strong>4</strong><span>{copy(lang, 'grupos', 'groups')}</span></div>
+      </div>
+      <div className="landing-athlete-list">
+        {ATHLETES.map(([name, group, status]) => (
+          <div className="landing-athlete-row" key={name}>
+            <span className="landing-athlete-avatar">{name.slice(0, 1)}</span>
+            <div>
+              <strong>{name}</strong>
+              <p>{group}</p>
+            </div>
+            <em>{status}</em>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function WhatsAppPreview({ lang }) {
+  return (
+    <div className="landing-whatsapp-preview">
+      <div className="landing-preview-topline">
+        <span>WhatsApp</span>
+        <strong>{copy(lang, 'Automático', 'Automatic')}</strong>
+      </div>
+      <div className="landing-wa-list">
+        {AUTOMATIONS.map(([title, detail, status]) => (
+          <div className="landing-wa-row" key={title}>
+            <div>
+              <strong>{title}</strong>
+              <p>{detail}</p>
+            </div>
+            <span>{status}</span>
+          </div>
+        ))}
+      </div>
+      <div className="landing-wa-message">
+        <span>{copy(lang, 'Mensaje listo', 'Message ready')}</span>
+        <p>Hola {'{nombre}'}, ya está publicada la semana del box.</p>
+      </div>
+    </div>
+  )
+}
+
+function PlanningComparison({ lang }) {
+  return (
+    <div className="landing-planning-preview">
+      <div className="landing-preview-topline">
+        <span>{copy(lang, 'Planificación semanal', 'Weekly programming')}</span>
+        <strong>{copy(lang, 'Coach + atleta', 'Coach + athlete')}</strong>
+      </div>
+      <div className="landing-planning-columns">
+        <div className="landing-coach-calendar">
+          <span>{copy(lang, 'Coach', 'Coach')}</span>
+          {WEEK.slice(0, 4).map(([day, type]) => (
+            <div key={day}>
+              <strong>{day}</strong>
+              <p>{type}</p>
+            </div>
+          ))}
+        </div>
+        <div className="landing-athlete-day">
+          <span>{copy(lang, 'Atleta', 'Athlete')}</span>
+          <h4>Día 3</h4>
+          <p>Power snatch<br />Overhead squat<br />Burpees over bar</p>
+          <button type="button">For Time</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CoachBuilderPreview({ lang }) {
+  return (
+    <div className="landing-coach-builder-preview" aria-label={copy(lang, 'Creación de WOD del coach', 'Coach WOD builder')}>
+      <div className="landing-preview-topline">
+        <span>{copy(lang, 'Coach planner', 'Coach planner')}</span>
+        <strong>{copy(lang, 'Nuevo WOD', 'New WOD')}</strong>
+      </div>
+      <div className="landing-builder-grid">
+        <div className="landing-builder-form">
+          <label>{copy(lang, 'Título', 'Title')}</label>
+          <div className="landing-builder-input">Día 3 · Oly + Metcon</div>
+
+          <div className="landing-builder-mini-row">
+            <div>
+              <label>{copy(lang, 'Fecha', 'Date')}</label>
+              <div className="landing-builder-input">Mié 29</div>
+            </div>
+            <div>
+              <label>{copy(lang, 'Destino', 'Audience')}</label>
+              <div className="landing-builder-input">Grupo RX</div>
+            </div>
+          </div>
+
+          <label>{copy(lang, 'Bloques', 'Blocks')}</label>
+          <div className="landing-builder-block">
+            <span>01 · Fuerza</span>
+            <p>3x4 Back Squats + 6/8 cal bike</p>
+          </div>
+          <div className="landing-builder-block">
+            <span>02 · For Time</span>
+            <p>10-8-6-4-2 Hang power clean + BMU</p>
+          </div>
+        </div>
+
+        <div className="landing-builder-week">
+          <span>{copy(lang, 'Semana publicada', 'Published week')}</span>
+          {WEEK.map(([day, type]) => (
+            <div key={day} className={day === 'Mié' ? 'is-active' : ''}>
+              <strong>{day}</strong>
+              <p>{type}</p>
+            </div>
+          ))}
+          <button type="button">{copy(lang, 'Publicar semana', 'Publish week')}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FeatureTile({ title, text, index }) {
+  return (
+    <article className="landing-feature-tile">
+      <span>{String(index).padStart(2, '0')}</span>
+      <h3>{title}</h3>
+      <p>{text}</p>
+    </article>
+  )
+}
+
+function PriceCard({ name, price, detail, featured, onClick }) {
+  return (
+    <article className={`landing-price-card${featured ? ' is-featured' : ''}`}>
+      {featured && <span className="landing-price-badge">POPULAR</span>}
+      <h3>{name}</h3>
+      <div className="landing-price-value">{price}</div>
+      <p>{detail}</p>
+      <button type="button" onClick={onClick}>Elegir plan</button>
+    </article>
+  )
+}
 
 export default function Landing() {
   const { lang } = useLang()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [navScrolled, setNavScrolled] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    const onScroll = () => setNavScrolled(window.scrollY > 20)
+    const onScroll = () => setScrolled(window.scrollY > 12)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const goLogin = () => { setMenuOpen(false); navigate('/login') }
-  const goSignupCoach = () => { setMenuOpen(false); navigate('/register?role=coach') }
+  function goLogin() {
+    setMenuOpen(false)
+    navigate('/login')
+  }
 
-  const shell = {
-    width: '100%',
-    background: W.c.bg,
-    color: W.c.text,
-    fontFamily: W.font.sans,
-    '--w-line-dim': W.c.lineDim,
+  function goSignupCoach() {
+    setMenuOpen(false)
+    navigate('/register?role=coach')
+  }
+
+  function scrollTo(id) {
+    setMenuOpen(false)
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   return (
-    <div className="landing" style={shell}>
+    <main className="landing-new">
+      <header className={`landing-new-nav${scrolled ? ' is-scrolled' : ''}`}>
+        <button type="button" className="landing-brand-button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <Brand />
+        </button>
 
-      <header
-        className={`landing-nav-wrap${navScrolled ? ' is-scrolled' : ''}`}
-        style={{ '--w-line-dim': W.c.lineDim }}
-      >
-        <div className="landing-nav">
-          <WodsiLogo size={22} />
-          <div className="landing-nav-links" style={{ color: W.c.dim }}>
-            <span className="landing-nav-link" role="presentation">{t('nav_coaches', lang)}</span>
-            <span className="landing-nav-link" role="presentation">{t('nav_pricing', lang)}</span>
-            <span className="landing-nav-link" role="presentation">Blog</span>
-          </div>
-          <div className="landing-nav-actions">
-            <span style={{ cursor: 'pointer', fontSize: 14, color: W.c.dim }} onClick={goLogin}>
-              {t('nav_login', lang)}
-            </span>
-            <Btn primary sm onClick={goSignupCoach}>{t('nav_demo', lang)} →</Btn>
-          </div>
-          <button
-            type="button"
-            className="landing-nav-toggle"
-            aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(o => !o)}
-          >
-            {menuOpen ? '×' : '☰'}
+        <nav className="landing-new-links" aria-label="Landing">
+          {NAV_ITEMS.map(item => (
+            <button key={item.id} type="button" onClick={() => scrollTo(item.id)}>
+              {copy(lang, item.es, item.en)}
+            </button>
+          ))}
+        </nav>
+
+        <div className="landing-new-actions">
+          <button type="button" className="landing-link-button" onClick={goLogin}>
+            {copy(lang, 'Ingresar', 'Log in')}
+          </button>
+          <button type="button" className="landing-primary-button" onClick={goSignupCoach}>
+            {copy(lang, 'Probar Wodsi', 'Try Wodsi')}
           </button>
         </div>
-        <div className={`landing-nav-drawer${menuOpen ? ' open' : ''}`} style={{ color: W.c.dim }}>
-          <button type="button" onClick={() => setMenuOpen(false)}>{t('nav_coaches', lang)}</button>
-          <button type="button" onClick={() => setMenuOpen(false)}>{t('nav_pricing', lang)}</button>
-          <button type="button" onClick={() => setMenuOpen(false)}>Blog</button>
-          <button type="button" onClick={goLogin}>{t('nav_login', lang)}</button>
-          <Btn primary sm onClick={goSignupCoach} style={{ marginTop: 8, width: '100%', justifyContent: 'center' }}>
-            {t('nav_demo', lang)} →
-          </Btn>
-        </div>
+
+        <button
+          type="button"
+          className="landing-menu-button"
+          aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(open => !open)}
+        >
+          {menuOpen ? 'Cerrar' : 'Menú'}
+        </button>
       </header>
 
-      <section className="landing-section landing-hero" style={{ position: 'relative', overflow: 'hidden' }}>
-        <div
-          className="landing-hero-glow"
-          style={{
-            position: 'absolute', right: -120, top: -80, width: 400, height: 400,
-            background: `radial-gradient(circle, ${W.c.lime}25 0%, transparent 60%)`,
-            pointerEvents: 'none',
-          }}
-        />
-
-        <div className="landing-hero-grid">
-          <div className="landing-hero-copy">
-            <Reveal delay={0}>
-              <div className="landing-hero-kicker">
-                <span className="landing-hero-kicker-line" />
-                {t('hero_kicker', lang)}
-              </div>
-            </Reveal>
-            <Reveal delay={80}>
-              <h1 className="landing-hero-title">
-                {t('hero_title1', lang)},<br />
-                {t('hero_title2', lang)},<br />
-                <span className="landing-hero-title-accent">{t('hero_title3', lang)}</span>
-              </h1>
-            </Reveal>
-            <Reveal delay={140}>
-              <p className="landing-hero-sub">
-                {t('hero_sub', lang)}
-              </p>
-            </Reveal>
-            <Reveal delay={200}>
-              <div className="landing-hero-actions">
-                <div className="landing-hero-ctas">
-                  <Btn primary onClick={goSignupCoach}>{t('hero_cta1', lang)} →</Btn>
-                  <Btn ghost>▷ &nbsp;{t('hero_cta2', lang)}</Btn>
-                </div>
-                <p className="landing-hero-cta-note">
-                  {lang === 'es' ? 'SIN TARJETA · CANCELÁS CUANDO QUIERAS' : 'NO CARD · CANCEL ANYTIME'}
-                </p>
-              </div>
-            </Reveal>
-          </div>
-
-          <Reveal delay={120} className="landing-hero-visual-wrap">
-            <HeroShowcaseVisual lang={lang} />
-          </Reveal>
+      {menuOpen && (
+        <div className="landing-mobile-menu">
+          {NAV_ITEMS.map(item => (
+            <button key={item.id} type="button" onClick={() => scrollTo(item.id)}>
+              {copy(lang, item.es, item.en)}
+            </button>
+          ))}
+          <button type="button" onClick={goLogin}>{copy(lang, 'Ingresar', 'Log in')}</button>
+          <button type="button" className="landing-mobile-cta" onClick={goSignupCoach}>
+            {copy(lang, 'Probar Wodsi', 'Try Wodsi')}
+          </button>
         </div>
+      )}
 
-        <Reveal delay={280}>
-        <div
-          className="landing-hero-mockup landing-hero-mockup--wide"
-          style={{
-            marginTop: 40, position: 'relative',
-            background: W.c.bg2, borderRadius: 16, padding: 16,
-            boxShadow: `0 40px 100px ${W.c.lime}15, 0 0 0 1px ${W.c.line}`,
-          }}
-        >
-          <div className="landing-hero-card-tabs" style={{
-            display: 'flex', gap: 12, paddingBottom: 12, borderBottom: `1px solid ${W.c.lineDim}`,
-            fontFamily: W.font.mono, fontSize: 10, letterSpacing: 0.5, color: W.c.mute, textTransform: 'uppercase',
-          }}>
-            <span style={{ color: W.c.lime }}>● {t('dashboard', lang)}</span>
-            <span>{t('planning', lang)}</span>
-            <span>{t('athletes_nav', lang)}</span>
-            <span className="landing-hide-sm">WhatsApp</span>
-            <div style={{ flex: 1, minWidth: 8 }} />
-            <span>SEM 18</span>
-          </div>
-          <div className="landing-week-grid" style={{ marginTop: 16 }}>
-            {['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'].map((d, i) => {
-              const wods = [
-                ['AMRAP 20', 'Strength · BS'],
-                ['EMOM 18', 'OLY · Snatch'],
-                ['For Time', 'Murph 30%'],
-                ['Tabata', 'Gymnastics'],
-                ['AMRAP 12', 'Engine 2k'],
-                ['Partner', '"Fran" team'],
-                ['REST', null],
-              ][i]
-              const rest = i === 6
-              return (
-                <div
-                  key={d}
-                  className={`landing-week-cell${rest ? ' is-rest' : ''}`}
-                  style={{
-                    background: rest ? 'transparent' : W.c.card,
-                    border: rest ? `1px dashed ${W.c.lineDim}` : 'none',
-                    borderRadius: 10, padding: 10, minHeight: 96, position: 'relative', overflow: 'hidden',
-                    gridColumn: rest ? '1 / -1' : undefined,
-                  }}
-                >
-                  <div style={{ fontFamily: W.font.mono, fontSize: 9, color: W.c.mute, letterSpacing: 0.8 }}>{d}</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, fontFamily: W.font.display, marginTop: 4, color: rest ? W.c.mute : W.c.text }}>{4 + i}</div>
-                  {wods[0] && <div style={{ marginTop: 6, fontSize: 10, color: rest ? W.c.mute : W.c.lime, fontFamily: W.font.mono, fontWeight: 600 }}>{wods[0]}</div>}
-                  {wods[1] && <div style={{ fontSize: 10, color: W.c.dim, marginTop: 2 }}>{wods[1]}</div>}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-        </Reveal>
-      </section>
-
-      <section className="landing-section landing-metrics" style={{ borderTop: `1px solid ${W.c.lineDim}`, borderBottom: `1px solid ${W.c.lineDim}` }}>
-        {[['1.240','metric1'],['38.500','metric2'],['82k','metric3'],['4.9★','metric4']].map(([n, k], i) => (
-          <Reveal key={k} delay={i * 70} className="landing-metric">
-            <div className="landing-metrics-num" style={{ fontWeight: 700, letterSpacing: -2, fontFamily: W.font.display, lineHeight: 1, transition: 'color 0.3s ease' }}>{n}</div>
-            <div style={{ fontSize: 11, color: W.c.mute, fontFamily: W.font.mono, marginTop: 8, letterSpacing: 0.5, textTransform: 'uppercase' }}>{t(k, lang)}</div>
-          </Reveal>
-        ))}
-      </section>
-
-      <section className="landing-section" style={{ paddingTop: 64, paddingBottom: 64 }}>
-        <Reveal className="landing-features-head" style={{ display: 'flex', marginBottom: 40 }}>
-          <div>
-            <div style={{ fontFamily: W.font.mono, fontSize: 12, color: W.c.lime, letterSpacing: 2, marginBottom: 12 }}>FEATURES</div>
-            <h2 style={{ fontSize: 'clamp(32px, 8vw, 72px)', lineHeight: 0.95, letterSpacing: -2, fontWeight: 700, margin: 0, maxWidth: 800, fontFamily: W.font.display }}>
-              {t('feat_title', lang)}
-            </h2>
-          </div>
-          <div className="landing-features-sub" style={{ fontSize: 15, color: W.c.dim }}>{t('feat_sub', lang)}</div>
-        </Reveal>
-        <div className="landing-features-grid">
-          <FeatureCard1 lang={lang} />
-          <FeatureCard2 lang={lang} />
-          <FeatureCard3 lang={lang} />
-          <FeatureCard4 lang={lang} />
-        </div>
-      </section>
-
-      <section className="landing-section landing-testimonial" style={{ paddingTop: 64, paddingBottom: 64, background: W.c.bg2, position: 'relative', overflow: 'hidden' }}>
-        <Reveal className="landing-testimonial-block">
-        <div>
-          <div style={{ fontFamily: W.font.display, fontSize: 80, lineHeight: 0.8, color: W.c.lime, fontWeight: 700, marginBottom: -12 }}>"</div>
-          <p className="landing-testimonial-quote" style={{ lineHeight: 1.25, letterSpacing: -0.5, fontWeight: 500, margin: 0, fontFamily: W.font.display }}>
-            {lang === 'es'
-              ? 'Pasé de planillas y WhatsApp a tener todo el box ordenado en una tarde. Mis atletas entran y saben qué hacer.'
-              : 'Went from spreadsheets and WhatsApp to a fully organized box in one afternoon. My athletes log in and know what to do.'}
+      <section className="landing-hero-clean">
+        <div className="landing-hero-copy-clean">
+          <p className="landing-eyebrow">{copy(lang, 'Para boxes y coaches', 'For gyms and coaches')}</p>
+          <h1>
+            {copy(
+              lang,
+              'Planificá tu box. Tus atletas lo ven al instante.',
+              'Program your gym. Your athletes see it instantly.',
+            )}
+          </h1>
+          <p className="landing-hero-lead">
+            {copy(
+              lang,
+              'Wodsi ordena la semana, los atletas, los relojes y los avisos. Sin planillas eternas ni mensajes perdidos en WhatsApp.',
+              'Wodsi organizes the week, athletes, timers, and notices. No endless spreadsheets or lost WhatsApp messages.',
+            )}
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 24 }}>
-            <Avatar name="JC" size={48} tone="orange" />
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 15 }}>Joaquín Casal</div>
-              <div style={{ fontSize: 11, color: W.c.mute, fontFamily: W.font.mono, letterSpacing: 0.4 }}>HEAD COACH · CROSSFIT BERAZATEGUI</div>
-            </div>
+          <div className="landing-hero-buttons">
+            <button type="button" className="landing-primary-button is-large" onClick={goSignupCoach}>
+              {copy(lang, 'Empezar gratis', 'Start free')}
+            </button>
+            <button type="button" className="landing-secondary-button" onClick={() => scrollTo('producto')}>
+              {copy(lang, 'Ver cómo funciona', 'See how it works')}
+            </button>
           </div>
+          <p className="landing-hero-note">
+            {copy(lang, 'Pensado para entrenamiento funcional, cross training y boxes con programación semanal.', 'Built for functional training, cross training, and gyms with weekly programming.')}
+          </p>
         </div>
-        </Reveal>
-        <Reveal delay={120}>
-          <ImgSlot label="coach in box · 4:5" h={320} tone="orange" />
-        </Reveal>
+
+        <div className="landing-hero-product">
+          <WeekBoard lang={lang} />
+          <PhonePreview lang={lang} />
+        </div>
       </section>
 
-      <section className="landing-section" style={{ paddingTop: 64, paddingBottom: 64 }}>
-        <Reveal>
-          <h2 style={{ fontSize: 'clamp(32px, 8vw, 72px)', lineHeight: 0.95, letterSpacing: -2, fontWeight: 700, margin: '0 0 40px', maxWidth: 900, fontFamily: W.font.display }}>
-            {t('pricing_t', lang)}
-          </h2>
-        </Reveal>
-        <div className="landing-pricing-grid">
-          {[
-            { name: 'plan_starter', price: '12.000', limit: '20', desc: lang === 'es' ? 'Coach solo' : 'Solo coach' },
-            { name: 'plan_box', price: '28.000', limit: '80', desc: lang === 'es' ? 'Box mediano' : 'Mid-size box', featured: true },
-            { name: 'plan_chain', price: null, limit: '∞', desc: lang === 'es' ? 'Cadena / Personalizado' : 'Chain / Custom' },
-          ].map((p, i) => (
-            <PricingCard key={p.name} p={p} lang={lang} onCta={goSignupCoach} revealDelay={i * 90} />
+      <section className="landing-strip" aria-label={copy(lang, 'Módulos', 'Modules')}>
+        {[
+          copy(lang, 'Planificación', 'Programming'),
+          'WhatsApp',
+          copy(lang, 'Atletas', 'Athletes'),
+          copy(lang, 'Relojes', 'Timers'),
+          copy(lang, 'Cobros', 'Payments'),
+        ].map(item => <span key={item}>{item}</span>)}
+      </section>
+
+      <section id="producto" className="landing-section-clean landing-product-section">
+        <div className="landing-section-intro">
+          <p className="landing-eyebrow">{copy(lang, 'Producto', 'Product')}</p>
+          <h2>{copy(lang, 'La semana del box en un solo lugar.', 'The gym week in one place.')}</h2>
+          <p>
+            {copy(
+              lang,
+              'Cargá entrenamientos por día, asigná a todo el box o a grupos, y dejá que cada atleta entre a ver lo que le toca.',
+              'Load workouts by day, assign them to the whole gym or groups, and let each athlete see what they need.',
+            )}
+          </p>
+        </div>
+
+        <div className="landing-product-grid">
+          <div className="landing-product-card is-dark">
+            <h3>{copy(lang, 'Vista del coach', 'Coach view')}</h3>
+            <p>{copy(lang, 'El coach arma la semana por días, grupos o atletas, y publica cuando está listo.', 'The coach builds the week by days, groups, or athletes, and publishes when ready.')}</p>
+            <CoachBuilderPreview lang={lang} />
+          </div>
+          <div className="landing-product-card">
+            <h3>{copy(lang, 'Vista del atleta', 'Athlete view')}</h3>
+            <p>{copy(lang, 'El atleta entra y ve solo lo que tiene que hacer: el día, los bloques y el botón para empezar.', 'The athlete opens the app and sees only what they need: the day, blocks, and start button.')}</p>
+            <AthleteWorkoutPreview lang={lang} />
+          </div>
+        </div>
+      </section>
+
+      <section id="ejemplos" className="landing-section-clean landing-examples-section">
+        <div className="landing-section-intro">
+          <p className="landing-eyebrow">{copy(lang, 'Ejemplos visibles', 'Visible examples')}</p>
+          <h2>{copy(lang, 'Así se ve Wodsi en el día a día.', 'This is how Wodsi looks day to day.')}</h2>
+          <p>
+            {copy(
+              lang,
+              'Más que una promesa: pantallas simples para manejar atletas, avisos y semanas completas sin ruido.',
+              'More than a promise: simple screens to manage athletes, notices, and complete weeks without noise.',
+            )}
+          </p>
+        </div>
+
+        <div className="landing-examples-grid">
+          <article className="landing-example-card is-wide">
+            <div>
+              <p className="landing-example-kicker">{copy(lang, 'Panel de atletas', 'Athlete panel')}</p>
+              <h3>{copy(lang, 'Roster, grupos y estado de cobro en una vista.', 'Roster, groups, and payment status in one view.')}</h3>
+            </div>
+            <AthletePanelPreview lang={lang} />
+          </article>
+
+          <article className="landing-example-card">
+            <div>
+              <p className="landing-example-kicker">WhatsApp</p>
+              <h3>{copy(lang, 'Automatizaciones que acompañan sin perseguir.', 'Automations that help without chasing people.')}</h3>
+            </div>
+            <WhatsAppPreview lang={lang} />
+          </article>
+
+          <article className="landing-example-card">
+            <div>
+              <p className="landing-example-kicker">{copy(lang, 'Coach y atleta', 'Coach and athlete')}</p>
+              <h3>{copy(lang, 'La misma semana, dos vistas distintas.', 'The same week, two different views.')}</h3>
+            </div>
+            <PlanningComparison lang={lang} />
+          </article>
+        </div>
+      </section>
+
+      <section id="beneficios" className="landing-section-clean">
+        <div className="landing-section-intro">
+          <p className="landing-eyebrow">{copy(lang, 'Beneficios', 'Benefits')}</p>
+          <h2>{copy(lang, 'Menos administración. Más entrenamiento.', 'Less admin. More training.')}</h2>
+        </div>
+        <div className="landing-feature-grid-clean">
+          {BENEFITS.map((item, index) => (
+            <FeatureTile
+              key={item.es}
+              index={index + 1}
+              title={copy(lang, item.es, item.en)}
+              text={copy(lang, item.copyEs, item.copyEn)}
+            />
           ))}
         </div>
       </section>
 
-      <section className="landing-section landing-final-cta" style={{ textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div
-          className="landing-final-glow"
-          style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse at center, ${W.c.lime}18 0%, transparent 60%)` }}
-        />
-        <Reveal style={{ position: 'relative' }}>
-          <h2 style={{ fontSize: 'clamp(40px, 10vw, 120px)', fontWeight: 700, letterSpacing: -3, lineHeight: 0.92, fontFamily: W.font.display, margin: 0 }}>
-            {lang === 'es' ? 'Tu box, ' : 'Your box, '}<br />
-            <span style={{ color: W.c.lime, fontStyle: 'italic', fontWeight: 500 }}>
-              {lang === 'es' ? 'sin caos.' : 'no chaos.'}
-            </span>
-          </h2>
-          <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <Btn primary onClick={goSignupCoach}>{t('hero_cta1', lang)} →</Btn>
-            <Btn ghost>{t('hero_cta2', lang)}</Btn>
-          </div>
-        </Reveal>
+      <section className="landing-quote-section">
+        <p>
+          {copy(
+            lang,
+            '“Queríamos que el coach pueda preparar la semana y volver al box. Wodsi existe para sacar ruido, no para agregar otra herramienta difícil.”',
+            '“We wanted coaches to prepare the week and get back on the floor. Wodsi exists to remove noise, not add another complicated tool.”',
+          )}
+        </p>
+        <span>{copy(lang, 'Equipo Wodsi', 'Wodsi team')}</span>
       </section>
 
-      <footer className="landing-section landing-footer" style={{
-        paddingTop: 32, paddingBottom: 32, borderTop: `1px solid ${W.c.lineDim}`,
-        display: 'flex', alignItems: 'center', gap: 16, fontSize: 12, color: W.c.mute, fontFamily: W.font.mono,
-      }}>
-        <WodsiLogo size={16} />
+      <section id="planes" className="landing-section-clean">
+        <div className="landing-section-intro">
+          <p className="landing-eyebrow">{copy(lang, 'Planes', 'Plans')}</p>
+          <h2>{copy(lang, 'Pagás según el tamaño de tu box.', 'Pay based on gym size.')}</h2>
+          <p>{copy(lang, 'Simple para empezar, claro para crecer.', 'Simple to start, clear to grow.')}</p>
+        </div>
+        <div className="landing-price-grid">
+          <PriceCard name="Starter" price="$12.000" detail={copy(lang, 'Hasta 20 atletas · ARS / mes', 'Up to 20 athletes · ARS / month')} onClick={goSignupCoach} />
+          <PriceCard name="Box" price="$28.000" detail={copy(lang, 'Hasta 80 atletas · ARS / mes', 'Up to 80 athletes · ARS / month')} featured onClick={goSignupCoach} />
+          <PriceCard name="Chain" price={copy(lang, 'A medida', 'Custom')} detail={copy(lang, 'Para cadenas, sedes o equipos grandes', 'For chains, locations, or larger teams')} onClick={goSignupCoach} />
+        </div>
+      </section>
+
+      <section className="landing-final-clean">
+        <h2>{copy(lang, 'Tu box, más simple.', 'Your gym, simpler.')}</h2>
+        <p>{copy(lang, 'Probá Wodsi y armá tu primera semana de programación.', 'Try Wodsi and build your first programming week.')}</p>
+        <button type="button" className="landing-primary-button is-large" onClick={goSignupCoach}>
+          {copy(lang, 'Empezar ahora', 'Start now')}
+        </button>
+      </section>
+
+      <footer className="landing-footer-clean">
+        <Brand />
         <span>© 2026</span>
-        <span style={{ flex: 1 }} />
-        <span>BUENOS AIRES · MADRID · MIAMI</span>
-        <span>hola@wodsi.app</span>
+        <span>wodsi.com.ar</span>
       </footer>
-    </div>
-  )
-}
-
-function cardShell(children, { delay = 0, gridColumn, hover = true } = {}) {
-  return (
-    <Reveal delay={delay} style={gridColumn ? { gridColumn } : undefined}>
-      <div
-        className={`landing-feature-card${hover ? '' : ' landing-feature-card--static'}`}
-        style={{
-          background: W.c.bg2,
-          borderRadius: 16,
-          padding: 24,
-          minHeight: 280,
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'relative',
-          overflow: 'hidden',
-          height: '100%',
-        }}
-      >
-        {children}
-      </div>
-    </Reveal>
-  )
-}
-
-function FeatureCard1({ lang }) {
-  return cardShell(
-    <>
-      <Tag tone="lime">01 · {t('planning', lang).toUpperCase()}</Tag>
-      <h3 style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 700, letterSpacing: -1, margin: '16px 0 10px', fontFamily: W.font.display }}>{t('f1_t', lang)}</h3>
-      <p style={{ fontSize: 14, color: W.c.dim, lineHeight: 1.55, margin: 0 }}>{t('f1_d', lang)}</p>
-      <div style={{ marginTop: 24, display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
-        {[1,2,3,4,5].map(i => (
-          <div key={i} className="landing-feature-chip" style={{
-            flex: '0 0 72px', background: W.c.card, padding: 8, borderRadius: 8, minHeight: 72,
-            borderTop: `3px solid ${i === 2 ? W.c.lime : i === 4 ? W.c.orange : W.c.lineDim}`,
-          }}>
-            <div style={{ fontFamily: W.font.mono, fontSize: 8, color: W.c.mute }}>L M X</div>
-            <div style={{ fontSize: 10, color: W.c.text, marginTop: 6, fontWeight: 600 }}>
-              {['Squat','EMOM','Murph','Tabata','Engine'][i - 1]}
-            </div>
-          </div>
-        ))}
-      </div>
-    </>,
-    { delay: 0, gridColumn: '1 / -1' },
-  )
-}
-
-function FeatureCard2({ lang }) {
-  const WA = '#25D366'
-  const rules = lang === 'es'
-    ? ['Bienvenida al registrarse', 'Recordatorio de cuota', 'Cuota vencida (3 días)', 'Seguimiento inactivos']
-    : ['Welcome on signup', 'Monthly fee reminder', 'Overdue (3 days)', 'Inactive follow-up']
-  return cardShell(
-    <>
-      <Tag tone="lime">02 · WHATSAPP</Tag>
-      <h3 style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 700, letterSpacing: -1, margin: '16px 0 10px', fontFamily: W.font.display }}>{t('f2_t', lang)}</h3>
-      <p style={{ fontSize: 14, color: W.c.dim, lineHeight: 1.55, margin: 0 }}>{t('f2_d', lang)}</p>
-      <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {rules.map((label, i) => (
-          <div key={label} className="landing-wa-rule" style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            background: W.c.card, borderRadius: 10, padding: '10px 12px',
-            borderLeft: `3px solid ${i === 1 ? WA : W.c.lineDim}`,
-          }}>
-            <span style={{ fontSize: 16 }}>{i === 0 ? '👋' : i === 1 ? '💬' : i === 2 ? '⏰' : '📲'}</span>
-            <span style={{ fontSize: 12, fontWeight: 500 }}>{label}</span>
-            {i > 0 && i < 3 && (
-              <span style={{ marginLeft: 'auto', fontFamily: W.font.mono, fontSize: 9, color: WA }}>AUTO</span>
-            )}
-          </div>
-        ))}
-      </div>
-      <div style={{
-        marginTop: 14, padding: '10px 12px', borderRadius: 10,
-        background: `${WA}18`, fontSize: 11, color: W.c.dim, lineHeight: 1.45,
-      }}>
-        {lang === 'es'
-          ? 'Conectás tu WhatsApp una vez; Wodsi encola y envía solo a atletas de tu roster.'
-          : 'Connect WhatsApp once; Wodsi queues and sends only to athletes on your roster.'}
-      </div>
-    </>,
-    { delay: 100 },
-  )
-}
-
-function FeatureCard3({ lang }) {
-  const [previewMode, setPreviewMode] = useState('amrap')
-
-  return cardShell(
-    <>
-      <Tag tone="blue">03 · TIMERS</Tag>
-      <h3 style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 700, letterSpacing: -1, margin: '16px 0 10px', fontFamily: W.font.display }}>{t('f3_t', lang)}</h3>
-      <p style={{ fontSize: 14, color: W.c.dim, lineHeight: 1.55, margin: 0 }}>{t('f3_d', lang)}</p>
-      <p style={{ fontSize: 12, color: W.c.mute, margin: '12px 0 0', lineHeight: 1.45 }}>
-        {lang === 'es'
-          ? 'Tocá cada modo para ver cómo se ve en el celular del atleta.'
-          : 'Tap each mode to see how it looks on the athlete’s phone.'}
-      </p>
-      <div className="landing-timer-pills" role="tablist" aria-label={lang === 'es' ? 'Modos de timer' : 'Timer modes'}>
-        {LANDING_TIMER_PILLS.map(pill => {
-          const active = previewMode === pill.id
-          return (
-            <button
-              key={pill.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              className={`landing-timer-pill${active ? ' is-active' : ''}`}
-              onClick={() => setPreviewMode(pill.id)}
-            >
-              {active ? `● ${pill.label}` : pill.label}
-            </button>
-          )
-        })}
-      </div>
-      <TimerPreviewMini mode={previewMode} lang={lang} />
-    </>,
-    { delay: 200, hover: false },
-  )
-}
-
-function FeatureCard4({ lang }) {
-  return cardShell(
-    <>
-      <Tag tone="violet">04 · {t('history', lang).toUpperCase()}</Tag>
-      <h3 style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 700, letterSpacing: -1, margin: '16px 0 10px', fontFamily: W.font.display }}>{t('f4_t', lang)}</h3>
-      <p style={{ fontSize: 14, color: W.c.dim, lineHeight: 1.55, margin: 0 }}>{t('f4_d', lang)}</p>
-      <div style={{ marginTop: 16, display: 'flex', gap: 16, flexWrap: 'wrap', fontFamily: W.font.mono }}>
-        {[['Back Squat','142 kg','+8'],['Snatch','92 kg','+4'],['Fran','3:14','−12s']].map(([n, v, d]) => (
-          <div key={n}>
-            <div style={{ fontSize: 9, color: W.c.mute }}>{n.toUpperCase()}</div>
-            <div style={{ fontSize: 22, fontWeight: 700, fontFamily: W.font.display }}>{v}</div>
-            <div style={{ fontSize: 10, color: W.c.lime }}>▲ {d}</div>
-          </div>
-        ))}
-      </div>
-    </>,
-    { delay: 300 },
-  )
-}
-
-function PricingCard({ p, lang, onCta, revealDelay = 0 }) {
-  return (
-    <Reveal delay={revealDelay}>
-    <div
-      className={`landing-pricing-card${p.featured ? ' is-featured' : ''}`}
-      style={{
-        background: p.featured ? W.c.lime : W.c.bg2,
-        color: p.featured ? W.c.bg : W.c.text,
-        borderRadius: 16, padding: 24, position: 'relative',
-        boxShadow: p.featured ? `0 24px 80px ${W.c.lime}30` : 'none',
-      }}
-    >
-      {p.featured && (
-        <div style={{
-          position: 'absolute', top: 20, right: 20,
-          fontFamily: W.font.mono, fontSize: 10, fontWeight: 700,
-          background: W.c.bg, color: W.c.lime, padding: '4px 8px', borderRadius: 3,
-        }}>POPULAR</div>
-      )}
-      <div style={{ fontFamily: W.font.mono, fontSize: 11, letterSpacing: 1, opacity: 0.8 }}>{t(p.name, lang).toUpperCase()}</div>
-      <div style={{ fontSize: 'clamp(48px, 12vw, 72px)', fontWeight: 700, letterSpacing: -2, marginTop: 12, fontFamily: W.font.display, lineHeight: 1 }}>
-        {p.price !== null
-          ? <>${p.price}</>
-          : <span style={{ fontSize: 'clamp(22px, 5vw, 30px)', letterSpacing: -0.5 }}>
-              {lang === 'es' ? 'A consultar' : 'On request'}
-            </span>
-        }
-      </div>
-      {p.price !== null && (
-        <div style={{ fontSize: 11, opacity: 0.7, fontFamily: W.font.mono, marginTop: 4 }}>ARS {t('per_month', lang).toUpperCase()}</div>
-      )}
-      <div style={{ fontSize: 13, marginTop: 16, opacity: 0.85 }}>
-        {p.desc} · {lang === 'es' ? 'hasta' : 'up to'} <strong>{p.limit}</strong> {t('athletes', lang)}
-      </div>
-      <button type="button" onClick={onCta} style={{
-        width: '100%', padding: '14px', borderRadius: 999, border: 'none', marginTop: 20,
-        background: p.featured ? W.c.bg : W.c.cardHi,
-        color: p.featured ? W.c.lime : W.c.text,
-        fontFamily: W.font.sans, fontWeight: 600, fontSize: 15, cursor: 'pointer',
-      }}>{t('cta_pick', lang)} →</button>
-    </div>
-    </Reveal>
+    </main>
   )
 }

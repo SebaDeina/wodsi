@@ -17,12 +17,12 @@ export default function TimerForTime() {
     : null
 
   const status = screen.showPrestart
-    ? (lang === 'es' ? '● PREPARATE' : '● GET READY')
+    ? (lang === 'es' ? 'PREPARATE' : 'GET READY')
     : overCap
-      ? (lang === 'es' ? '● SOBRE CAP' : '● OVER CAP')
+      ? (lang === 'es' ? 'SOBRE CAP' : 'OVER CAP')
       : screen.mainRunning
-        ? (lang === 'es' ? '● SUBIENDO' : '● RUNNING')
-        : (lang === 'es' ? '○ LISTO' : '○ READY')
+        ? (lang === 'es' ? 'SUBIENDO' : 'RUNNING')
+        : (lang === 'es' ? 'LISTO' : 'READY')
 
   const caption = screen.showPrestart
     ? (lang === 'es' ? 'ARRANQUE EN…' : 'STARTING IN…')

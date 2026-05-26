@@ -46,7 +46,7 @@ function backUrlForMp() {
   if (process.env.MP_BACK_URL) return process.env.MP_BACK_URL
   const local = `${APP_URL}/coach/planes?mp=return`
   if (/localhost|127\.0\.0\.1/.test(APP_URL)) {
-    return 'https://wodsi-47ffb.web.app/coach/planes?mp=return'
+    return 'https://wodsi.com.ar/coach/planes?mp=return'
   }
   return local
 }

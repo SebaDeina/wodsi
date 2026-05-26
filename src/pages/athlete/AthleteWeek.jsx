@@ -4,8 +4,8 @@ import { useAuth } from '../../context/AuthContext'
 import { useLang } from '../../context/LangContext'
 import { W } from '../../tokens'
 import { AthleteShell } from '../../components/AthleteShell'
-import { Tag } from '../../components/Tag'
 import { EmptyCard } from '../../components/EmptyCard'
+import { SvgIcon } from '../../components/SvgIcon'
 import { useAthleteWods } from '../../hooks/useAthleteWods'
 import { useAthleteSessionLogs } from '../../hooks/useAthleteSessionLogs'
 import { addDays, startOfWeek, getISOWeek, toDateKey, isToday } from '../../lib/dates'
@@ -46,20 +46,20 @@ export default function AthleteWeek() {
           ? `${secs.length} ${lang === 'es' ? 'bloques' : 'blocks'}`
           : (secs[0]?.header || secs[0]?.lines?.[0] || wod.title))
         : null
+      if (!wod) return null
       return {
         date,
         key,
         d,
         n: String(date.getDate()),
-        wod: wod ? wodTypeLabel(wod.type) : (lang === 'es' ? '—' : '—'),
+        wod: wodTypeLabel(wod.type),
         sub,
-        color: wod ? wodTypeColor(wod.type) : 'mute',
+        color: wodTypeColor(wod.type),
         today: isToday(date),
-        wodDoc: wod || null,
-        rest: !wod,
-        done: wod ? isCompleted(key) : false,
+        wodDoc: wod,
+        done: isCompleted(key),
       }
-    })
+    }).filter(Boolean)
   }, [weekStart, wodsByDate, lang, isCompleted])
 
   function shiftWeek(delta) {
@@ -90,9 +90,9 @@ export default function AthleteWeek() {
 
           <div style={{ display: 'flex', gap: 4, marginBottom: 16, padding: 4, background: W.c.card, borderRadius: 10 }}>
             {[
-              { label: `◀ W${getISOWeek(prevWeek)}`, onClick: () => shiftWeek(-1) },
+              { label: `W${getISOWeek(prevWeek)}`, icon: 'chevronLeft', onClick: () => shiftWeek(-1) },
               { label: `W${weekNum}`, onClick: () => setWeekStart(currentWeekStart), active: true },
-              { label: `W${getISOWeek(nextWeek)} ▶`, onClick: () => shiftWeek(1) },
+              { label: `W${getISOWeek(nextWeek)}`, icon: 'chevronRight', onClick: () => shiftWeek(1) },
             ].map((w, i) => (
               <button
                 key={i}
@@ -104,9 +104,12 @@ export default function AthleteWeek() {
                   background: w.active ? W.c.cardHi : 'transparent',
                   color: w.active ? W.c.lime : W.c.dim,
                   cursor: 'pointer', border: 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2,
                 }}
               >
+                {w.icon === 'chevronLeft' && <SvgIcon name="chevronLeft" size={14} />}
                 {w.label}
+                {w.icon === 'chevronRight' && <SvgIcon name="chevronRight" size={14} />}
               </button>
             ))}
           </div>
@@ -125,8 +128,8 @@ export default function AthleteWeek() {
               {days.map((d, i) => (
                 <div
                   key={i}
-                  role={d.wodDoc ? 'button' : undefined}
-                  tabIndex={d.wodDoc ? 0 : undefined}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => openDay(d)}
                   onKeyDown={e => { if (d.wodDoc && e.key === 'Enter') openDay(d) }}
                   style={{
@@ -135,8 +138,7 @@ export default function AthleteWeek() {
                     color: d.today ? W.c.bg : W.c.text,
                     display: 'flex', alignItems: 'center', gap: 14,
                     boxShadow: d.today ? `0 12px 32px ${W.c.lime}30` : 'none',
-                    opacity: d.rest && !d.today ? 0.75 : 1,
-                    cursor: d.wodDoc ? 'pointer' : 'default',
+                    cursor: 'pointer',
                   }}
                 >
                   <div style={{ width: 44, textAlign: 'center', borderRight: `1px solid ${d.today ? `${W.c.bg}40` : W.c.lineDim}`, paddingRight: 14 }}>
@@ -145,13 +147,7 @@ export default function AthleteWeek() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, fontFamily: W.font.display, letterSpacing: -0.3 }}>{d.wod}</div>
-                    {d.sub ? (
-                      <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>{d.sub}</div>
-                    ) : (
-                      <div style={{ fontSize: 12, opacity: 0.6, marginTop: 2 }}>
-                        {lang === 'es' ? 'Sin programar' : 'Not scheduled'}
-                      </div>
-                    )}
+                    {d.sub && <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>{d.sub}</div>}
                   </div>
                   {d.wodDoc && d.done && (
                     <span style={{
@@ -160,11 +156,12 @@ export default function AthleteWeek() {
                       color: d.today ? W.c.lime : W.c.bg,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 14, fontWeight: 700,
-                    }}>✓</span>
+                    }}>
+                      <SvgIcon name="check" size={16} />
+                    </span>
                   )}
-                  {d.wodDoc && !d.done && d.today && <span style={{ fontSize: 18, opacity: 0.6 }}>▶</span>}
-                  {d.wodDoc && !d.done && !d.today && <span style={{ fontSize: 18, color: W.c.mute }}>›</span>}
-                  {d.rest && !d.today && <Tag tone="mute" sm>REST</Tag>}
+                  {d.wodDoc && !d.done && d.today && <span style={{ opacity: 0.6, lineHeight: 0 }}><SvgIcon name="play" size={18} /></span>}
+                  {d.wodDoc && !d.done && !d.today && <span style={{ color: W.c.mute, lineHeight: 0 }}><SvgIcon name="chevronRight" size={18} /></span>}
                 </div>
               ))}
             </div>

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useLang } from '../../context/LangContext'
 import { W } from '../../tokens'
 import { PhoneFrame } from '../../components/PhoneFrame'
+import { SvgIcon } from '../../components/SvgIcon'
 import {
   loadTimerWod,
   saveTimerWod,
@@ -59,7 +60,14 @@ export default function TimerPicker() {
       <PhoneFrame>
         <div style={{ flex: 1, padding: '12px 20px 20px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-            <span style={{ fontSize: 22, color: W.c.dim, cursor: 'pointer' }} onClick={() => navigate(-1)}>×</span>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              style={{ color: W.c.dim, cursor: 'pointer', background: 'none', border: 'none', padding: 0, lineHeight: 0 }}
+              aria-label={lang === 'es' ? 'Cerrar' : 'Close'}
+            >
+              <SvgIcon name="close" size={22} />
+            </button>
           </div>
 
           <h1 style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1.5, lineHeight: 1, margin: '0 0 6px', fontFamily: W.font.display }}>

@@ -14,12 +14,12 @@ export default function TimerAmrap() {
   const done = timer.done && screen.gate.isActive
   const totalLabel = formatTimerDisplay(cfg.totalSeconds)
   const status = screen.showPrestart
-    ? (lang === 'es' ? '● PREPARATE' : '● GET READY')
+    ? (lang === 'es' ? 'PREPARATE' : 'GET READY')
     : done
-      ? (lang === 'es' ? '● TIEMPO' : '● TIME')
+      ? (lang === 'es' ? 'TIEMPO' : 'TIME')
       : screen.mainRunning
-        ? (lang === 'es' ? '● EN MARCHA' : '● RUNNING')
-        : (lang === 'es' ? '○ LISTO' : '○ READY')
+        ? (lang === 'es' ? 'EN MARCHA' : 'RUNNING')
+        : (lang === 'es' ? 'LISTO' : 'READY')
 
   const caption = screen.showPrestart
     ? (lang === 'es' ? 'ARRANQUE EN…' : 'STARTING IN…')

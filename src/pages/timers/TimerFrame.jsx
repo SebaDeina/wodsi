@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../../context/LangContext'
 import { W } from '../../tokens'
 import { PhoneFrame } from '../../components/PhoneFrame'
+import { SvgIcon } from '../../components/SvgIcon'
 import { formatTimerDisplay } from '../../lib/timerSession'
 
 const pageWrap = {
@@ -49,7 +50,7 @@ export function TimerFrame({
               style={{ fontSize: 22, color: W.c.dim, cursor: 'pointer', background: 'none', border: 'none', padding: 4, lineHeight: 1 }}
               aria-label={lang === 'es' ? 'Cerrar' : 'Close'}
             >
-              ×
+              <SvgIcon name="close" size={22} />
             </button>
             <div style={{ flex: 1, textAlign: 'center', padding: '0 8px', minWidth: 0 }}>
               <div style={{
@@ -134,7 +135,7 @@ export function TimerFrame({
                 flexShrink: 0,
               }}
             >
-              ↺
+              <SvgIcon name="reset" size={22} />
             </button>
             <button
               type="button"

@@ -5,6 +5,7 @@ import { W } from '../../tokens'
 import { AthleteShell } from '../../components/AthleteShell'
 import { EmptyCard } from '../../components/EmptyCard'
 import { Btn } from '../../components/Btn'
+import { SvgIcon } from '../../components/SvgIcon'
 import { useAthleteWods } from '../../hooks/useAthleteWods'
 import { useAthleteSessionLogs } from '../../hooks/useAthleteSessionLogs'
 import {
@@ -60,18 +61,18 @@ export default function AthleteHistory() {
       const wods = wodsByDate[key] || []
       const wod = wods[0] || null
       const locale = lang === 'es' ? 'es-AR' : 'en-US'
+      if (!wod) return null
       return {
         key,
         wod,
         label: date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric' }).replace('.', ''),
-        hasWod: Boolean(wod),
         done: isCompleted(key),
       }
-    })
+    }).filter(Boolean)
   }, [weekStart, wodsByDate, isCompleted, lang])
 
-  const scheduledCount = days.filter(d => d.hasWod).length
-  const doneScheduled = days.filter(d => d.hasWod && d.done).length
+  const scheduledCount = days.length
+  const doneScheduled = days.filter(d => d.done).length
   const adherencePct = scheduledCount
     ? Math.round((doneScheduled / scheduledCount) * 100)
     : null
@@ -115,9 +116,13 @@ export default function AthleteHistory() {
             {lang === 'es' ? `SEMANA ${getISOWeek(weekStart)}` : `WEEK ${getISOWeek(weekStart)}`}
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
-            <button type="button" onClick={() => setWeekStart(addDays(weekStart, -7))} style={weekBtn}>◀</button>
+            <button type="button" onClick={() => setWeekStart(addDays(weekStart, -7))} style={weekBtn}>
+              <SvgIcon name="chevronLeft" size={14} />
+            </button>
             <button type="button" onClick={() => setWeekStart(startOfWeek())} style={weekBtn}>·</button>
-            <button type="button" onClick={() => setWeekStart(addDays(weekStart, 7))} style={weekBtn}>▶</button>
+            <button type="button" onClick={() => setWeekStart(addDays(weekStart, 7))} style={weekBtn}>
+              <SvgIcon name="chevronRight" size={14} />
+            </button>
           </div>
         </div>
 
@@ -140,13 +145,11 @@ export default function AthleteHistory() {
                     padding: '10px 12px',
                     borderRadius: 10,
                     background: W.c.bg2,
-                    opacity: day.hasWod ? 1 : 0.45,
                   }}
                 >
                   <button
                     type="button"
-                    disabled={!day.hasWod}
-                    onClick={() => day.hasWod && toggleCompleted(day.key, day.wod)}
+                    onClick={() => toggleCompleted(day.key, day.wod)}
                     aria-label={lang === 'es' ? 'Completado' : 'Completed'}
                     style={{
                       width: 32,
@@ -157,18 +160,16 @@ export default function AthleteHistory() {
                       color: day.done ? W.c.bg : W.c.mute,
                       fontSize: 16,
                       fontWeight: 700,
-                      cursor: day.hasWod ? 'pointer' : 'default',
+                      cursor: 'pointer',
                       flexShrink: 0,
                     }}
                   >
-                    {day.done ? '✓' : ''}
+                    {day.done ? <SvgIcon name="check" size={16} strokeWidth={2.5} /> : null}
                   </button>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{day.label}</div>
                     <div style={{ fontSize: 12, color: W.c.dim, marginTop: 2 }}>
-                      {day.hasWod
-                        ? (day.wod?.title || wodTypeLabel(day.wod?.type))
-                        : (lang === 'es' ? 'Descanso' : 'Rest')}
+                      {day.wod?.title || wodTypeLabel(day.wod?.type)}
                     </div>
                   </div>
                 </div>
@@ -274,7 +275,7 @@ export default function AthleteHistory() {
                   }}
                   aria-label={lang === 'es' ? 'Eliminar' : 'Delete'}
                 >
-                  ×
+                  <SvgIcon name="close" size={18} />
                 </button>
               </div>
             ))}
@@ -302,4 +303,7 @@ const weekBtn = {
   cursor: 'pointer',
   fontFamily: 'inherit',
   fontSize: 12,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 }

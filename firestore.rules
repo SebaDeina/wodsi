@@ -29,6 +29,13 @@ service cloud.firestore {
       return isSignedIn() && myProfileExists() && myProfile().role == 'athlete';
     }
 
+    function isAppAdmin() {
+      return isSignedIn()
+        && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/app_config/admins)
+        && request.auth.token.email in get(/databases/$(database)/documents/app_config/admins).data.emails;
+    }
+
     function isLinkedCoach(coachId) {
       return coachId != null
         && (
@@ -49,6 +56,9 @@ service cloud.firestore {
     // ─── users/{userId} ────────────────────────────────────────
 
     match /users/{userId} {
+
+      // Admin: métricas globales
+      allow read: if isAppAdmin();
 
       // Propio perfil
       allow read: if isSelf(userId);
@@ -109,6 +119,16 @@ service cloud.firestore {
             'status', 'statusNote', 'paidUntil', 'lastPaidAt',
             'planDueDay', 'paidForMonth', 'membershipPlan',
           ]);
+
+      // Presencia / minutos activos (analytics de sesión)
+      allow update: if isSelf(userId)
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.coachId == resource.data.coachId
+        && request.resource.data.email == resource.data.email
+        && (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeenAt'])
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeenAt', 'activeMinutesTotal'])
+        );
 
       allow delete: if false;
     }
@@ -171,11 +191,13 @@ service cloud.firestore {
     // ─── coach_subscriptions/{coachId} — plan Wodsi (Mercado Pago) ─
 
     match /coach_subscriptions/{coachId} {
+      allow read: if isAppAdmin();
       allow read: if isCoach() && request.auth.uid == coachId;
       allow write: if false;
     }
 
     match /coach_subscription_payments/{paymentId} {
+      allow read: if isAppAdmin();
       allow read: if isCoach() && resource.data.coachId == request.auth.uid;
       allow write: if false;
     }
@@ -308,6 +330,37 @@ service cloud.firestore {
       allow update, delete: if isCoach()
         && resource.data.coachId == request.auth.uid
         && request.resource.data.coachId == request.auth.uid;
+    }
+
+    // ─── app_config/admins — emails admin (crear en Firebase Console) ─
+
+    match /app_config/admins {
+      allow read: if isAppAdmin();
+      allow write: if false;
+    }
+
+    // ─── Analytics — visitas ───────────────────────────────────
+
+    match /app_analytics/{docId} {
+      allow read: if isAppAdmin();
+      allow create: if docId == 'summary'
+        && request.resource.data.keys().hasOnly(['totalPageViews', 'createdAt', 'updatedAt'])
+        && request.resource.data.totalPageViews == 1;
+      allow update: if docId == 'summary'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalPageViews', 'updatedAt'])
+        && request.resource.data.totalPageViews == resource.data.totalPageViews + 1;
+    }
+
+    match /app_analytics_daily/{dateKey} {
+      allow read: if isAppAdmin();
+      allow create: if dateKey.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && request.resource.data.keys().hasOnly(['pageViews', 'date', 'createdAt', 'updatedAt'])
+        && request.resource.data.pageViews == 1
+        && request.resource.data.date == dateKey;
+      allow update: if dateKey.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pageViews', 'date', 'updatedAt'])
+        && request.resource.data.pageViews == resource.data.pageViews + 1
+        && request.resource.data.date == dateKey;
     }
   }
 }

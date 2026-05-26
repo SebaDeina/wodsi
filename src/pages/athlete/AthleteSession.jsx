@@ -7,6 +7,7 @@ import { Tag } from '../../components/Tag'
 import { Btn } from '../../components/Btn'
 import { Avatar } from '../../components/Avatar'
 import { EmptyCard } from '../../components/EmptyCard'
+import { SvgIcon } from '../../components/SvgIcon'
 import { useAthleteCoach } from '../../hooks/useAthleteCoach'
 import { WodSectionsView } from '../../components/WodSectionsView'
 import { wodTypeLabel } from '../../lib/wodDisplay'
@@ -111,7 +112,7 @@ export default function AthleteSession() {
           <div style={shellInner}>
             <div style={{ ...scrollPaneStyle(false), padding: '16px 20px 24px' }}>
               <button type="button" style={backBtn} onClick={() => navigate('/athlete')} aria-label={lang === 'es' ? 'Volver' : 'Back'}>
-                ‹
+                <SvgIcon name="chevronLeft" size={24} />
               </button>
               <div style={{ marginTop: 24 }}>
                 <EmptyCard
@@ -136,7 +137,7 @@ export default function AthleteSession() {
           <div style={scrollPaneStyle(true, Boolean(sessionTimerMode))}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 18 }}>
               <button type="button" style={backBtn} onClick={() => navigate(-1)} aria-label={lang === 'es' ? 'Volver' : 'Back'}>
-                ‹
+                <SvgIcon name="chevronLeft" size={24} />
               </button>
               <span style={{ flex: 1 }} />
               <span style={{ fontFamily: W.font.mono, fontSize: 11, color: W.c.mute }}>{sessionDateLine(wod, lang)}</span>
@@ -171,7 +172,8 @@ export default function AthleteSession() {
             {sessionTimerMode && (
               <>
                 <Btn primary style={{ width: '100%', justifyContent: 'center', padding: '16px', fontSize: 16 }} onClick={startTimer}>
-                  ▶ {lang === 'es' ? `Iniciar ${sessionTimerLabel}` : `Start ${sessionTimerLabel}`}
+                  <SvgIcon name="play" size={17} />
+                  {lang === 'es' ? `Iniciar ${sessionTimerLabel}` : `Start ${sessionTimerLabel}`}
                 </Btn>
                 <p style={{ fontSize: 11, color: W.c.mute, textAlign: 'center', margin: '10px 0 12px', fontFamily: W.font.mono }}>
                   {lang === 'es'
@@ -194,7 +196,12 @@ export default function AthleteSession() {
               onClick={() => toggleCompleted(sessionDate, wod)}
             >
               {sessionDone
-                ? (lang === 'es' ? '✓ Entrenamiento completado' : '✓ Workout completed')
+                ? (
+                  <>
+                    <SvgIcon name="check" size={17} />
+                    {lang === 'es' ? 'Entrenamiento completado' : 'Workout completed'}
+                  </>
+                )
                 : (lang === 'es' ? 'Marcar entrenamiento completado' : 'Mark workout complete')}
             </Btn>
           </div>

@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { LangProvider } from './context/LangContext'
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { AdminProtectedRoute } from './components/AdminProtectedRoute'
+import { PageViewTracker } from './components/PageViewTracker'
 import { AuthSessionRedirect } from './components/AuthSessionRedirect'
 import { ErrorBoundary } from './components/ErrorBoundary'
 
@@ -9,6 +11,7 @@ import Landing           from './pages/Landing'
 import Login             from './pages/Login'
 import Register          from './pages/Register'
 import Settings          from './pages/Settings'
+import SettingsSubscription from './pages/SettingsSubscription'
 import CoachDashboard    from './pages/coach/CoachDashboard'
 import CoachOnboarding   from './pages/coach/CoachOnboarding'
 import CoachAtletas      from './pages/coach/CoachAtletas'
@@ -32,6 +35,8 @@ import TimerAmrap        from './pages/timers/TimerAmrap'
 import TimerEmom         from './pages/timers/TimerEmom'
 import TimerForTime      from './pages/timers/TimerForTime'
 import TimerTabata       from './pages/timers/TimerTabata'
+import AdminLogin         from './pages/admin/AdminLogin'
+import AdminDashboard     from './pages/admin/AdminDashboard'
 
 export default function App() {
   return (
@@ -42,6 +47,7 @@ export default function App() {
             future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
           >
           <AuthSessionRedirect />
+          <PageViewTracker />
           <Routes>
             <Route path="/"        element={<Landing />} />
             <Route path="/demo"    element={<Navigate to="/register?role=coach" replace />} />
@@ -49,8 +55,16 @@ export default function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/join/:coachId" element={<JoinRedirect />} />
 
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={
+              <AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>
+            } />
+
             <Route path="/settings" element={
               <ProtectedRoute><Settings /></ProtectedRoute>
+            } />
+            <Route path="/settings/subscription" element={
+              <ProtectedRoute role="coach"><SettingsSubscription /></ProtectedRoute>
             } />
 
             {/* Coach routes */}

@@ -351,27 +351,41 @@ export default function CoachOnboarding() {
                   <div style={{ color: W.c.mute, fontSize: 13 }}>{lang === 'es' ? 'Cargando mensajes…' : 'Loading messages…'}</div>
                 ) : boxRules.slice(0, 4).map(rule => (
                   <div key={rule.id} style={{ padding: 14, borderRadius: 10, background: W.c.bg2, border: `1px solid ${W.c.lineDim}`, display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <span style={{ fontSize: 22 }}>{rule.icon || '•'}</span>
-                    <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 22, flexShrink: 0 }}>{rule.icon || '•'}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700, color: W.c.text }}>{rule.name}</div>
-                      <div style={{ fontSize: 12, color: W.c.dim, marginTop: 3 }}>
-                        {rule.active ? (lang === 'es' ? 'Activo' : 'On') : (lang === 'es' ? 'Apagado' : 'Off')}
+                      <div style={{ fontSize: 12, color: rule.active ? W.c.lime : W.c.mute, marginTop: 3, fontFamily: W.font.mono, letterSpacing: 0.3 }}>
+                        {rule.active ? (lang === 'es' ? 'ACTIVA' : 'ON') : (lang === 'es' ? 'APAGADA' : 'OFF')}
                       </div>
                     </div>
                     <button
                       type="button"
+                      aria-label={rule.active ? 'Apagar' : 'Activar'}
                       onClick={() => toggleRule(rule)}
                       style={{
-                        border: 'none',
+                        flexShrink: 0,
+                        width: 46,
+                        height: 26,
                         borderRadius: 999,
-                        padding: '8px 13px',
+                        border: 'none',
                         background: rule.active ? W.c.lime : W.c.cardHi,
-                        color: rule.active ? W.c.bg : W.c.text,
-                        fontWeight: 800,
+                        position: 'relative',
                         cursor: 'pointer',
+                        transition: 'background 0.18s ease',
+                        padding: 0,
                       }}
                     >
-                      {rule.active ? (lang === 'es' ? 'Activa' : 'On') : (lang === 'es' ? 'Activar' : 'Turn on')}
+                      <span style={{
+                        position: 'absolute',
+                        top: 3,
+                        left: rule.active ? 'calc(100% - 23px)' : '3px',
+                        width: 20,
+                        height: 20,
+                        borderRadius: 999,
+                        background: rule.active ? W.c.bg : W.c.mute,
+                        transition: 'left 0.18s ease',
+                        display: 'block',
+                      }} />
                     </button>
                   </div>
                 ))}

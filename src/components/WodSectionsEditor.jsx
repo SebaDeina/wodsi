@@ -47,6 +47,16 @@ export function WodSectionsEditor({ sections, onChange, lang }) {
     onChange([...sections, emptySection()])
   }
 
+  function moveSection(id, dir) {
+    const idx = sections.findIndex(s => s.id === id)
+    if (idx < 0) return
+    const next = [...sections]
+    const target = idx + dir
+    if (target < 0 || target >= next.length) return
+    ;[next[idx], next[target]] = [next[target], next[idx]]
+    onChange(next)
+  }
+
   function applyPaste() {
     const parsed = parseWodText(pasteText)
     onChange(parsed.length ? parsed : [emptySection()])
@@ -133,7 +143,7 @@ export function WodSectionsEditor({ sections, onChange, lang }) {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {normalizeSections(sections).map((section, idx) => (
+          {sections.map((section, idx) => (
             <div
               key={section.id}
               style={{
@@ -148,6 +158,32 @@ export function WodSectionsEditor({ sections, onChange, lang }) {
                   {lang === 'es' ? 'BLOQUE' : 'BLOCK'} {idx + 1}
                 </span>
                 <span style={{ flex: 1 }} />
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => moveSection(section.id, -1)}
+                    disabled={idx === 0}
+                    title={lang === 'es' ? 'Subir' : 'Move up'}
+                    style={{
+                      border: 'none', background: 'transparent',
+                      color: idx === 0 ? W.c.lineDim : W.c.mute,
+                      fontSize: 14, cursor: idx === 0 ? 'default' : 'pointer',
+                      lineHeight: 1, padding: '2px 4px',
+                    }}
+                  >↑</button>
+                  <button
+                    type="button"
+                    onClick={() => moveSection(section.id, 1)}
+                    disabled={idx === sections.length - 1}
+                    title={lang === 'es' ? 'Bajar' : 'Move down'}
+                    style={{
+                      border: 'none', background: 'transparent',
+                      color: idx === sections.length - 1 ? W.c.lineDim : W.c.mute,
+                      fontSize: 14, cursor: idx === sections.length - 1 ? 'default' : 'pointer',
+                      lineHeight: 1, padding: '2px 4px',
+                    }}
+                  >↓</button>
+                </div>
                 <button
                   type="button"
                   onClick={() => removeSection(section.id)}

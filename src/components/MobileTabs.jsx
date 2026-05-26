@@ -1,13 +1,14 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { W } from '../tokens'
 import { t } from '../i18n'
+import { SvgIcon } from './SvgIcon'
 
 const TABS = [
-  { k: 'home', icon: '◉', path: '/athlete' },
-  { k: 'week', icon: '⊞', path: '/athlete/week' },
-  { k: 'timers', icon: '⏱', path: '/athlete/timers' },
-  { k: 'history', icon: '◷', path: '/athlete/history' },
-  { k: 'profile', icon: '○', path: '/settings' },
+  { k: 'home', icon: 'home', path: '/athlete' },
+  { k: 'week', icon: 'week', path: '/athlete/week' },
+  { k: 'timers', icon: 'timer', path: '/athlete/timers' },
+  { k: 'history', icon: 'history', path: '/athlete/history' },
+  { k: 'profile', icon: 'profile', path: '/settings' },
 ]
 
 export function MobileTabs({ lang }) {
@@ -51,7 +52,9 @@ export function MobileTabs({ lang }) {
               minWidth: 56,
             }}
           >
-            <span style={{ fontSize: 22, color: isActive ? W.c.lime : W.c.mute }}>{icon}</span>
+            <span style={{ color: isActive ? W.c.lime : W.c.mute, lineHeight: 0 }}>
+              <SvgIcon name={icon} size={22} strokeWidth={isActive ? 2.4 : 2} />
+            </span>
             <span style={{
               fontSize: 10,
               fontFamily: W.font.mono,

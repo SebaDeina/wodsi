@@ -149,9 +149,9 @@ export function useWhatsAppAutomation() {
   }
 
   async function updateRule(ruleId, patch) {
+    setRules(prev => prev.map(r => (r.id === ruleId ? { ...r, ...patch } : r)))
     const ref = doc(db, 'whatsapp_rules', ruleId)
     await updateDoc(ref, { ...patch, updatedAt: serverTimestamp() })
-    setRules(prev => prev.map(r => (r.id === ruleId ? { ...r, ...patch } : r)))
   }
 
   async function createRule(data) {

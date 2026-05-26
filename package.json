@@ -20,6 +20,7 @@
     "billing:dev": "npm run dev --prefix services/billing-api",
     "billing:start": "npm run start --prefix services/billing-api",
     "billing:create-plans": "node services/billing-api/scripts/create-mp-plans.mjs",
+    "admin:setup-firestore": "node services/billing-api/scripts/setup-admin-firestore.mjs",
     "docker:up": "docker compose up -d --build",
     "docker:logs": "docker compose logs -f",
     "docker:down": "docker compose down"

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../../context/LangContext'
 import { W } from '../../tokens'
 import { PhoneFrame } from '../PhoneFrame'
+import { SvgIcon } from '../SvgIcon'
 import { formatTimerDisplay } from '../../lib/timerSession'
 import { TimerClock } from '../../pages/timers/TimerFrame'
 import {
@@ -117,14 +118,14 @@ export function EmomTimerView({
   const clockValue = showPrestart ? prestartLeft : remaining
   const showTenSeconds = !showPrestart && !done && remaining === 10
   const status = showPrestart
-    ? (lang === 'es' ? '● PREPARATE' : '● GET READY')
+    ? (lang === 'es' ? 'PREPARATE' : 'GET READY')
     : showTenSeconds
-      ? (lang === 'es' ? '● DIEZ SEGUNDOS' : '● TEN SECONDS')
+      ? (lang === 'es' ? 'DIEZ SEGUNDOS' : 'TEN SECONDS')
       : done
-        ? (lang === 'es' ? '● TIEMPO' : '● TIME')
+        ? (lang === 'es' ? 'TIEMPO' : 'TIME')
         : mainRunning
-          ? (lang === 'es' ? '● THIS MINUTE' : '● THIS MINUTE')
-          : (lang === 'es' ? '○ LISTO' : '○ READY')
+          ? (lang === 'es' ? 'THIS MINUTE' : 'THIS MINUTE')
+          : (lang === 'es' ? 'LISTO' : 'READY')
   const clockCaption = showPrestart
     ? (lang === 'es' ? 'ARRANQUE EN…' : 'STARTING IN…')
     : showTenSeconds
@@ -168,7 +169,7 @@ export function EmomTimerView({
               }}
               aria-label={lang === 'es' ? 'Cerrar' : 'Close'}
             >
-              ×
+              <SvgIcon name="close" size={22} />
             </button>
             <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
               <div style={{
@@ -234,7 +235,7 @@ export function EmomTimerView({
               </span>
               <span style={{ color: W.c.lineDim }}>·</span>
               <span>
-                <span style={{ color: W.c.lime }}>●</span>{' '}
+                <SvgIcon name="dot" size={10} style={{ color: W.c.lime, verticalAlign: -1 }} />{' '}
                 {lang === 'es' ? 'MIN' : 'MIN'} <strong style={{ color: W.c.lime }}>{round}</strong>
               </span>
               <span style={{ color: W.c.lineDim }}>·</span>
@@ -377,7 +378,7 @@ export function EmomTimerView({
               }}
               title={lang === 'es' ? 'Reiniciar' : 'Reset'}
             >
-              ↺
+              <SvgIcon name="reset" size={22} />
             </button>
             <button
               type="button"

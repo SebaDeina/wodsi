@@ -5,6 +5,7 @@ import { W } from '../../tokens'
 import { AthleteShell } from '../../components/AthleteShell'
 import { Avatar } from '../../components/Avatar'
 import { EmptyCard } from '../../components/EmptyCard'
+import { SvgIcon } from '../../components/SvgIcon'
 import { useAthleteCoach } from '../../hooks/useAthleteCoach'
 import { useAthleteWods } from '../../hooks/useAthleteWods'
 import { useAthleteHabits } from '../../hooks/useAthleteHabits'
@@ -127,7 +128,8 @@ export default function AthleteHome() {
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
               >
-                ▶ {lang === 'es' ? 'Empezar sesión' : 'Start session'}
+                <SvgIcon name="play" size={16} />
+                {lang === 'es' ? 'Empezar sesión' : 'Start session'}
               </button>
             </div>
           ) : (
@@ -186,7 +188,9 @@ export default function AthleteHome() {
                     color: 'inherit',
                   }}
                 >
-                  <div style={{ fontSize: 18, opacity: h.done ? 1 : 0.45 }}>{h.icon}</div>
+                  <div style={{ opacity: h.done ? 1 : 0.45, color: h.done ? W.c.lime : W.c.mute, lineHeight: 0 }}>
+                    <SvgIcon name={h.id} size={20} strokeWidth={2.2} />
+                  </div>
                   <div style={{ fontSize: 9, color: h.done ? W.c.lime : W.c.mute, marginTop: 4, fontFamily: W.font.mono }}>{h.label}</div>
                 </button>
               ))}

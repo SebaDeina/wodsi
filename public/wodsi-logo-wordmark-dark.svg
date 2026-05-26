@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-label="Wodsi">
+  <rect width="1200" height="320" fill="none"/>
+  <rect x="24" y="24" width="272" height="272" rx="48" fill="#c6ef3a"/>
+  <text
+    x="160"
+    y="210"
+    text-anchor="middle"
+    fill="#1a1d26"
+    font-family="Space Grotesk, Helvetica Neue, Helvetica, Arial, sans-serif"
+    font-weight="900"
+    font-size="178"
+    letter-spacing="-4"
+  >W</text>
+  <text
+    x="340"
+    y="210"
+    fill="#f5f5f4"
+    font-family="Space Grotesk, Helvetica Neue, Helvetica, Arial, sans-serif"
+    font-weight="700"
+    font-size="168"
+    letter-spacing="-4"
+  >wodsi</text>
+</svg>

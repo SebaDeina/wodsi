@@ -5,6 +5,7 @@ import { W } from '../../tokens'
 import { AthleteShell } from '../../components/AthleteShell'
 import { Btn } from '../../components/Btn'
 import { EmptyCard } from '../../components/EmptyCard'
+import { SvgIcon } from '../../components/SvgIcon'
 import { useAthleteCoach } from '../../hooks/useAthleteCoach'
 import {
   billingMonthKey,
@@ -35,7 +36,21 @@ export default function AthleteSubscription() {
   return (
     <AthleteShell lang={lang}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 18 }}>
-            <span style={{ fontSize: 22, cursor: 'pointer' }} onClick={() => navigate(-1)}>‹</span>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: W.c.text,
+                cursor: 'pointer',
+                padding: 0,
+                lineHeight: 0,
+              }}
+              aria-label={lang === 'es' ? 'Volver' : 'Back'}
+            >
+              <SvgIcon name="chevronLeft" size={24} />
+            </button>
             <span style={{ flex: 1, textAlign: 'center', fontSize: 14, fontWeight: 600 }}>
               {lang === 'es' ? 'Membresía' : 'Membership'}
             </span>
@@ -141,7 +156,10 @@ export default function AthleteSubscription() {
                   lang === 'es' ? 'Avisos por WhatsApp del box' : 'Gym WhatsApp notices',
                 ].map((txt, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: `1px solid ${W.c.lineDim}`, fontSize: 13 }}>
-                    <span style={{ color: W.c.lime, fontWeight: 700 }}>✓</span>{txt}
+                    <span style={{ color: W.c.lime, lineHeight: 0 }}>
+                      <SvgIcon name="check" size={16} strokeWidth={2.5} />
+                    </span>
+                    {txt}
                   </div>
                 ))}
               </div>

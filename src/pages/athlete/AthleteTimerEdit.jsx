@@ -3,6 +3,7 @@ import { useLang } from '../../context/LangContext'
 import { W } from '../../tokens'
 import { AthleteShell } from '../../components/AthleteShell'
 import { Btn } from '../../components/Btn'
+import { SvgIcon } from '../../components/SvgIcon'
 import { TimerPrefsFields } from '../../components/TimerPrefsFields'
 import { useAthleteTimerPrefs } from '../../hooks/useAthleteTimerPrefs'
 import { TIMER_MODES, timerModeColor, timerModeName, timerModePath } from '../../lib/timerModes'
@@ -44,7 +45,7 @@ export default function AthleteTimerEdit() {
         }}
         aria-label={lang === 'es' ? 'Volver' : 'Back'}
       >
-        ‹
+        <SvgIcon name="chevronLeft" size={24} />
       </button>
 
       <div style={{
@@ -93,7 +94,8 @@ export default function AthleteTimerEdit() {
         }}
         onClick={startTimer}
       >
-        ▶ {lang === 'es' ? `Iniciar ${timerModeName(mode, lang)}` : `Start ${timerModeName(mode, lang)}`}
+        <SvgIcon name="play" size={18} />
+        {lang === 'es' ? `Iniciar ${timerModeName(mode, lang)}` : `Start ${timerModeName(mode, lang)}`}
       </Btn>
     </AthleteShell>
   )

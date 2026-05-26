@@ -1,5 +1,6 @@
 import { useLang } from '../../context/LangContext'
 import { W } from '../../tokens'
+import { SvgIcon } from '../../components/SvgIcon'
 import { useTabataTimer } from '../../hooks/useWorkoutTimer'
 import { useTimerScreen } from '../../hooks/useTimerScreen'
 import { useTimerConfig } from '../../hooks/useTimerConfig'
@@ -57,7 +58,7 @@ export default function TimerTabata() {
           <TimerClock
             value={screen.mainValue}
             prestart
-            status={lang === 'es' ? '● PREPARATE' : '● GET READY'}
+            status={lang === 'es' ? 'PREPARATE' : 'GET READY'}
             statusColor="blue"
             caption={lang === 'es' ? 'ARRANQUE EN…' : 'STARTING IN…'}
           />
@@ -71,7 +72,7 @@ export default function TimerTabata() {
               fontWeight: 700,
               marginBottom: 2,
             }}>
-              ● {phaseLabel}
+              <SvgIcon name="dot" size={9} style={{ verticalAlign: -1 }} /> {phaseLabel}
             </div>
             <TimerClock
               value={screen.mainValue}
